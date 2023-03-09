@@ -25,9 +25,9 @@ class Eda:
         filas = ceil(cat.shape[1] / 2)
         #Definimos el gráfico
         import matplotlib.pyplot as plt
-        f, ax = plt.subplots(nrows = filas, ncols = 2, figsize = (16, filas * 6))
+        _, ax = plt.subplots(nrows = filas, ncols = 2, figsize = (16, filas * 6))
         #Aplanamos para iterar por el gráfico como si fuera de 1 dimensión en lugar de 2
-        ax = ax.flat 
+        ax = ax.flat
         #Creamos el bucle que va añadiendo gráficos
         for cada, variable in enumerate(cat):
             cat[variable].value_counts().plot.barh(ax = ax[cada])
