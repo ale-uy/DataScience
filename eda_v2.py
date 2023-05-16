@@ -1,5 +1,8 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import OneHotEncoder
+
 
 class Eda:
     def __init__(self, df):
@@ -8,8 +11,10 @@ class Eda:
 
         Parameters:
             df (DataFrame): El DataFrame sobre el cual realizar el análisis exploratorio de datos.
+            df_copy (DataFrame): Copia del DataFrame para cuando apliquemos técnicas de ML.
         """
         self.df = df
+        self.df_copy = pd.DataFrame()
 
     def analizar_nulos(self):
         """
@@ -112,3 +117,43 @@ class Eda:
         Mezcla los datos en el DataFrame de forma aleatoria.
         """
         self.df = self.df.iloc[np.random.permutation(len(self.df))]
+
+    def create_copy(self):
+        """
+        Crea una copia del DataFrame original `df` y lo asigna al DataFrame `df_hot`.
+
+        El DataFrame `df_copy` lo utilizamos para resguardar el DataFrame orginal.
+        """
+        self.df_copy = self.df.copy(deep=True)
+
+
+    def one_hot_encode(self):
+        """
+        Realiza la codificación one-hot de las variables categóricas en el DataFrame df_hot.
+        """
+
+        #Categóricas
+        cat = self.df.select_dtypes('O')
+
+        #Instanciamos
+        ohe = OneHotEncoder(sparse = False)
+
+        #Entrenamos
+        ohe.fit(cat)
+
+        #Aplicamos
+        cat_ohe = ohe.transform(cat)
+
+        #Ponemos los nombres
+        cat_ohe = pd.DataFrame(
+            cat_ohe,
+            columns = ohe.get_feature_names_out(
+                input_features = cat.columns
+            )
+        ).reset_index(drop = True)
+
+        #Seleccionamos las variables numéricas para poder juntarlas a las cat_ohe
+        num = self.df.select_dtypes('number').reset_index(drop = True)
+
+        #Las juntamos todas en el dataframe final
+        self.df = pd.concat([cat_ohe,num], axis = 1)
