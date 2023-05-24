@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import OneHotEncoder
 
 
 class Eda:
@@ -127,33 +126,11 @@ class Eda:
         self.df_copy = self.df.copy(deep=True)
 
 
-    def one_hot_encode(self):
+    def create_dummies(self, drop_first=False):
         """
-        Realiza la codificación one-hot de las variables categóricas en el DataFrame df_hot.
+        Realiza la codificación one-hot/dummies de las variables categóricas en el DataFrame.
+        Con drop_first = True crea dummies. Por defecto es False (one-hot-encoding)
         """
-
-        #Categóricas
-        cat = self.df.select_dtypes('O')
-
-        #Instanciamos
-        ohe = OneHotEncoder(sparse = False)
-
-        #Entrenamos
-        ohe.fit(cat)
-
-        #Aplicamos
-        cat_ohe = ohe.transform(cat)
-
-        #Ponemos los nombres
-        cat_ohe = pd.DataFrame(
-            cat_ohe,
-            columns = ohe.get_feature_names_out(
-                input_features = cat.columns
-            )
-        ).reset_index(drop = True)
-
-        #Seleccionamos las variables numéricas para poder juntarlas a las cat_ohe
-        num = self.df.select_dtypes('number').reset_index(drop = True)
-
-        #Las juntamos todas en el dataframe final
-        self.df = pd.concat([cat_ohe,num], axis = 1)
+        categorical_columns = self.df.select_dtypes('object').columns
+        #prefixes = {k:v for (k,v) in zip(categorical_columns, categorical_columns)}
+        self.df = pd.get_dummies(self.df, drop_first=drop_first)
