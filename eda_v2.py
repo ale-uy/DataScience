@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+
+"""
+Autor: ale-uy
+Fecha: 2 de mayo de 2023
+Archivo: eda_v2.py
+Descripción: Análisis Exploratorio de Datos (EDA)
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -129,8 +138,8 @@ class Eda:
     def create_dummies(self, drop_first=False):
         """
         Realiza la codificación one-hot/dummies de las variables categóricas en el DataFrame.
-        Con drop_first = True crea dummies. Por defecto es False (one-hot-encoding)
+        Con drop_first = True elimina la primer dummy. Por defecto es False (one-hot-encoding)
         """
-        categorical_columns = self.df.select_dtypes('object').columns
+        #categorical_columns = self.df.select_dtypes('object').columns
         #prefixes = {k:v for (k,v) in zip(categorical_columns, categorical_columns)}
         self.df = pd.get_dummies(self.df, drop_first=drop_first)
