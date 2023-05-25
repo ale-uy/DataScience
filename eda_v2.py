@@ -20,7 +20,7 @@ class Eda:
 
         Parameters:
             df (DataFrame): El DataFrame sobre el cual realizar el análisis exploratorio de datos.
-            df_copy (DataFrame): Copia del DataFrame para cuando apliquemos técnicas de ML.
+            df_copy (DataFrame): Copia del DataFrame para cuando apliquemos técnicas de ML por ejemplo.
         """
         self.df = df
         self.df_copy = pd.DataFrame()
