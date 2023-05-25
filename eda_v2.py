@@ -10,6 +10,7 @@ Descripción: Análisis Exploratorio de Datos (EDA)
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 class Eda:
@@ -143,3 +144,44 @@ class Eda:
         #categorical_columns = self.df.select_dtypes('object').columns
         #prefixes = {k:v for (k,v) in zip(categorical_columns, categorical_columns)}
         self.df = pd.get_dummies(self.df, drop_first=drop_first)
+
+    def plot_histogram(self, column):
+        """
+        Genera un histograma para una columna dada.
+
+        Parameters:
+            column (str): Nombre de la columna para la cual generar el histograma.
+        """
+        plt.figure()
+        self.df[column].plot.hist()
+        plt.title(f"Histogram of {column}")
+        plt.show()
+
+    def plot_boxplot(self, x, y):
+        """
+        Genera un diagrama de caja y bigotes para visualizar la distribución de una variable numérica
+        agrupada por una variable categórica.
+
+        Parameters:
+            x (str): Nombre de la variable categórica para agrupar.
+            y (str): Nombre de la variable numérica a visualizar.
+        """
+        plt.figure()
+        sns.boxplot(x=x, y=y, data=self.df)
+        plt.title(f"Boxplot of {y} grouped by {x}")
+        plt.show()
+
+    def plot_scatter(self, x, y):
+        """
+        Genera un gráfico de dispersión para visualizar la relación entre dos variables numéricas.
+
+        Parameters:
+            x (str): Nombre de la variable en el eje x.
+            y (str): Nombre de la variable en el eje y.
+        """
+        plt.figure()
+        plt.scatter(self.df[x], self.df[y])
+        plt.xlabel(x)
+        plt.ylabel(y)
+        plt.title(f"Scatter plot of {x} and {y}")
+        plt.show()
