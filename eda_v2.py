@@ -54,7 +54,7 @@ class Eda:
         categorical_columns = self.df.select_dtypes('O').columns
         num_columns = len(categorical_columns)
         rows = (num_columns + 1) // 2
-        fig, ax = plt.subplots(nrows=rows, ncols=2, figsize=(16, rows * 6))
+        _, ax = plt.subplots(nrows=rows, ncols=2, figsize=(16, rows * 6))
         ax = ax.flat
         for i, col in enumerate(categorical_columns):
             self._plot_categorical_barh(col, ax[i])
