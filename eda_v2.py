@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-
 """
 Autor: ale-uy
 Fecha: 2 de mayo de 2023
 Archivo: eda_v2.py
-Descripción: Análisis Exploratorio de Datos (EDA)
+Descripción: Análisis Exploratorio de Datos (EDA en ingles)
 """
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 
 
 class Eda:
@@ -185,3 +185,35 @@ class Eda:
         plt.ylabel(y)
         plt.title(f"Scatter plot of {x} and {y}")
         plt.show()
+
+    def plot_histogram_interactive(self, column):
+        """
+        Genera un histograma interactivo para una columna específica del DataFrame.
+
+        Parameters:
+            column (str): Nombre de la columna a visualizar en el histograma.
+        """
+        fig = px.histogram(self.df, x=column)
+        fig.show()
+
+    def plot_boxplot_interactive(self, x, y):
+        """
+        Genera un gráfico de caja interactivo para una variable y en función de otra variable x.
+
+        Parameters:
+            x (str): Nombre de la variable independiente en el gráfico de caja.
+            y (str): Nombre de la variable dependiente en el gráfico de caja.
+        """
+        fig = px.box(self.df, x=x, y=y)
+        fig.show()
+
+    def plot_scatter_interactive(self, x, y):
+        """
+        Genera un gráfico de dispersión interactivo para dos variables x e y.
+
+        Parameters:
+            x (str): Nombre de la variable x en el gráfico de dispersión.
+            y (str): Nombre de la variable y en el gráfico de dispersión.
+        """
+        fig = px.scatter(self.df, x=x, y=y)
+        fig.show()
