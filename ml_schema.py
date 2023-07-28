@@ -9,6 +9,7 @@ Descripción: Automatizar machine learning
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import KNNImputer
 
 
 class preproceso:

@@ -125,6 +125,15 @@ class Eda:
         """
         self.df = self.df.iloc[np.random.permutation(len(self.df))]
 
+    def create_dummies(self, drop_first=False):
+        """
+        Realiza la codificación one-hot/dummies de las variables categóricas en el DataFrame.
+        Con drop_first = True elimina la primer dummy. Por defecto es False (one-hot-encoding)
+        """
+        #categorical_columns = self.df.select_dtypes('object').columns
+        #prefixes = {k:v for (k,v) in zip(categorical_columns, categorical_columns)}
+        self.df = pd.get_dummies(self.df, drop_first=drop_first)
+
     def plot_histogram(self, column):
         """
         Genera un histograma para una columna dada.
