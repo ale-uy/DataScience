@@ -9,10 +9,9 @@ Descripción: Automatizar machine learning
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.impute import KNNImputer
 
 
-class preproceso:
+class Preproceso:
 
     @classmethod
     def one_hot_encode(cls, df, categorical_vars:list):
@@ -55,7 +54,7 @@ class preproceso:
         df[numeric_columns] = scaler.fit_transform(df[numeric_columns])
 
 
-class ml:
+class Ml:
     def __init__(self, df):
         """
         Inicializa una instancia de la clase ml.

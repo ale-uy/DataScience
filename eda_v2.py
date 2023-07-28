@@ -206,3 +206,20 @@ class Eda:
         """
         fig = px.scatter(self.df, x=x, y=y)
         fig.show()
+
+    def nombre_categoricas(self, opcion:bool=True):
+        """
+        Retorna las columnas del DataFrame que corresponden a variables categóricas o numéricas,
+        dependiendo de la opción especificada.
+        
+        Parámetros:
+        opcion (bool): Si es True, se seleccionarán las columnas cuyos datos sean de tipo categórico.
+                       Si es False, se seleccionarán las columnas cuyos datos sean de tipo numérico.
+
+        Retorna:
+        Lista de nombres de columnas que corresponden al tipo de datos seleccionado.
+        """
+        if opcion == True:
+            self.df.select_dtypes('O').columns
+        else:
+            self.df.select_dtypes('number').columns
