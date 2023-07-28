@@ -20,10 +20,8 @@ class Eda:
 
         Parameters:
             df (DataFrame): El DataFrame sobre el cual realizar el análisis exploratorio de datos.
-            df_copy (DataFrame): Copia del DataFrame para cuando apliquemos técnicas de ML por ejemplo.
         """
         self.df = df
-        self.df_copy = pd.DataFrame()
 
     def analizar_nulos(self):
         """
@@ -126,24 +124,6 @@ class Eda:
         Mezcla los datos en el DataFrame de forma aleatoria.
         """
         self.df = self.df.iloc[np.random.permutation(len(self.df))]
-
-    def create_copy(self):
-        """
-        Crea una copia del DataFrame original `df` y lo asigna al DataFrame `df_hot`.
-
-        El DataFrame `df_copy` lo utilizamos para resguardar el DataFrame orginal.
-        """
-        self.df_copy = self.df.copy(deep=True)
-
-
-    def create_dummies(self, drop_first=False):
-        """
-        Realiza la codificación one-hot/dummies de las variables categóricas en el DataFrame.
-        Con drop_first = True elimina la primer dummy. Por defecto es False (one-hot-encoding)
-        """
-        #categorical_columns = self.df.select_dtypes('object').columns
-        #prefixes = {k:v for (k,v) in zip(categorical_columns, categorical_columns)}
-        self.df = pd.get_dummies(self.df, drop_first=drop_first)
 
     def plot_histogram(self, column):
         """
