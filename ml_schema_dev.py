@@ -14,12 +14,14 @@ import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
 import lightgbm as lgb
+import xgboost as xgb
+import catboost as cb
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, OneHotEncoder, LabelEncoder
 from sklearn.impute import KNNImputer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, AdaBoostRegressor
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score, mean_squared_error, confusion_matrix, \
-    precision_score, recall_score, f1_score, roc_auc_score
+    precision_score, recall_score, f1_score, roc_auc_score, r2_score
 from statsmodels.stats.outliers_influence import summary_table
 
 pd.set_option('display.max_colwidth', None) # Mostrar todo el ancho de las celdas en el DataFrame
@@ -356,7 +358,7 @@ class ML:
             df (pandas DataFrame): El DataFrame que contiene las variables de entrada y la variable objetivo.
             target (str): El nombre de la columna que contiene la variable objetivo.
             tipo_problema (str): Tipo de problema: 'clasificacion' o 'regresion'.
-            boosting_type (str): Posibles opciones: 'rf', 'gbdt' (default), 'goss', 'dart' (muy lento).
+            boosting_type (str): Posibles opciones: 'rf', 'gbdt' (default), 'goss', 'dart'.
             test_size (float): El tamaño de la muestra para el conjunto de prueba, 0.2 por defecto.
             num_boost_round (int): El número de iteraciones del algoritmo (número de árboles), 100 por defecto.
             learning_rate (float): Tasa de aprendizaje del modelo, 0.1 por defecto.
@@ -454,6 +456,314 @@ class ML:
             raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
 
         return metric
+    
+    @classmethod
+    def modelo_adaboost(cls, df, target:str, tipo_problema:str, 
+                        test_size=0.2, n_estimators=50, learning_rate=1.0,
+                        random_state=np.random.randint(1, 1000), graficar=False):
+        """
+        Utiliza AdaBoost para predecir la variable objetivo en un DataFrame.
+
+        Parámetros:
+            df (pandas DataFrame): El DataFrame que contiene las variables de entrada y la variable objetivo.
+            target (str): El nombre de la columna que contiene la variable objetivo.
+            tipo_problema (str): Tipo de problema: 'clasificacion' o 'regresion'.
+            test_size (float): El tamaño de la muestra para el conjunto de prueba, 0.2 por defecto.
+            n_estimators (int): El número de estimadores (número de árboles), 50 por defecto.
+            learning_rate (float): Tasa de aprendizaje del modelo, 1.0 por defecto.
+            random_state (int): Semilla a usar para la división de los datos, por defecto es un número aleatorio.
+            graficar (bool): Si es True, se generan los gráficos correspondientes según el tipo de problema.
+
+        Retorna:
+            pd.DataFrame: Un DataFrame que contiene diferentes métricas y estadísticas del modelo.
+        """
+        # Separamos la variable objetivo 'y' del resto de las variables 'X'
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        # Dividimos los datos en conjuntos de entrenamiento y prueba
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+
+        # Creamos el modelo AdaBoost
+        if tipo_problema == 'clasificacion':
+            model = AdaBoostClassifier(
+                n_estimators=n_estimators,
+                learning_rate=learning_rate,
+                random_state=random_state
+            )
+        elif tipo_problema == 'regresion':
+            model = AdaBoostRegressor(
+                n_estimators=n_estimators,
+                learning_rate=learning_rate,
+                random_state=random_state
+            )
+        else:
+            raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
+        
+        # Entrenamos el modelo AdaBoost
+        model.fit(X_train, y_train)
+
+        # Realizamos predicciones en el conjunto de prueba
+        y_pred = model.predict(X_test)
+
+        # Calculamos las métricas de clasificación o regresión
+        if tipo_problema == 'clasificacion':
+            accuracy = accuracy_score(y_test, y_pred)
+            precision = precision_score(y_test, y_pred, average='weighted')
+            recall = recall_score(y_test, y_pred, average='weighted')
+            f1 = f1_score(y_test, y_pred, average='weighted')
+
+            # Creamos un DataFrame con las métricas y sus explicaciones
+            metrics = pd.DataFrame({
+                'Metrica': ['Accuracy', 'Precision', 'Recall', 'F1-score'],
+                'Valor': [accuracy, precision, recall, f1],
+                'Explicacion': [
+                    'Accuracy (Exactitud): Proporción de muestras correctamente clasificadas.',
+                    'Precision (Precisión): Media ponderada de precision para cada clase.',
+                    'Recall (Sensibilidad): Media ponderada de recall para cada clase.',
+                    'F1-score (Puntuación F1): Media ponderada de F1-score para cada clase.']
+            })
+        else:
+            mse = mean_squared_error(y_test, y_pred)
+            r2 = r2_score(y_test, y_pred)
+
+            # Creamos un DataFrame con las métricas y sus explicaciones
+            metrics = pd.DataFrame({
+                'Metrica': ['Mean Squared Error (MSE)', 'R-cuadrado (R^2)'],
+                'Valor': [mse, r2],
+                'Explicacion': [
+                    'Mean Squared Error (MSE): Error cuadrático medio entre las predicciones y los valores verdaderos.',
+                    'R-cuadrado (R^2): Coeficiente de determinación que indica la proporción de la varianza total de la variable dependiente explicada por el modelo.']
+            })
+
+        if graficar:
+            if tipo_problema == 'clasificacion':
+                cls._plot_clasificacion(y_test, y_pred)
+            else:
+                cls._plot_regresion(y_test, y_pred)
+
+        # Mostramos todas las explicaciones sin recortar la columna
+        pd.set_option('display.max_colwidth', None)
+        
+        return metrics
+    
+    @classmethod
+    def modelo_xgboost(cls, df, target:str, tipo_problema:str, 
+                        test_size=0.2, num_boost_round=100,
+                        learning_rate=0.1, max_depth=3, objective='binary:logistic',
+                        random_state=np.random.randint(1, 1000), graficar=False):
+        """
+        Utiliza XGBoost para predecir la variable objetivo en un DataFrame.
+
+        Parámetros:
+            df (pandas DataFrame): El DataFrame que contiene las variables de entrada y la variable objetivo.
+            target (str): El nombre de la columna que contiene la variable objetivo.
+            tipo_problema (str): Tipo de problema: 'clasificacion' o 'regresion'.
+            test_size (float): El tamaño de la muestra para el conjunto de prueba, 0.2 por defecto.
+            num_boost_round (int): El número de iteraciones del algoritmo (número de árboles), 100 por defecto.
+            learning_rate (float): Tasa de aprendizaje del modelo, 0.1 por defecto.
+            max_depth (int): Profundidad máxima de los árboles, 3 por defecto.
+            objective (str): Función objetivo, 'reg:squarederror' para regresión, 
+                'binary:logistic' para clasificación binaria, 'multi:softmax' para clasificación multiclase.
+            random_state (int): Semilla a usar para la división de los datos, por defecto es un número aleatorio.
+            graficar (bool): Si es True, se generan los gráficos correspondientes según el tipo de problema.
+
+        Retorna:
+            pd.DataFrame: Un DataFrame que contiene diferentes métricas y estadísticas del modelo.
+        """
+        # Separamos la variable objetivo 'y' del resto de las variables 'X'
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        # Verificamos si la variable objetivo es numérica
+        if not np.issubdtype(y.dtype, np.number):
+            # Si no es numérica, la convertimos utilizando LabelEncoder
+            label_encoder = LabelEncoder()
+            y = label_encoder.fit_transform(y)
+
+        # Dividimos los datos en conjuntos de entrenamiento y prueba
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+
+        # Creamos el objeto DMatrix de XGBoost
+        dtrain = xgb.DMatrix(X_train, label=y_train)
+        dtest = xgb.DMatrix(X_test, label=y_test)
+
+        # Parámetros del modelo XGBoost
+        params = {
+            'objective': objective,
+            'learning_rate': learning_rate,
+            'max_depth': max_depth
+        }
+
+        if tipo_problema == 'clasificacion':
+            # Problema de clasificación binaria o multiclase
+            if objective == 'reg:squarederror':
+                raise ValueError("La función objetivo debe ser 'binary:logistic' o 'multi:softmax' para un problema de clasificación.")
+            
+            # Entrenamos el modelo XGBoost para clasificación
+            xgb_model = xgb.train(params, dtrain, num_boost_round=num_boost_round)
+            
+            # Realizamos predicciones en el conjunto de prueba
+            y_pred = xgb_model.predict(dtest)
+            if 'binary' in objective:
+                y_pred_binary = (y_pred > 0.5).astype(int)
+            else:
+                y_pred_binary = np.argmax(y_pred, axis=1)
+
+            # Calculamos las métricas de clasificación
+            accuracy = accuracy_score(y_test, y_pred_binary)
+            precision = precision_score(y_test, y_pred_binary, average='weighted')
+            recall = recall_score(y_test, y_pred_binary, average='weighted')
+            f1 = f1_score(y_test, y_pred_binary, average='weighted')
+            roc_auc = roc_auc_score(y_test, y_pred_binary)
+
+            # Creamos un DataFrame con las métricas y sus explicaciones
+            metrics = pd.DataFrame({
+                'Metrica': ['Accuracy', 'Precision', 'Recall', 'F1-score', 'AUC ROC'],
+                'Valor': [accuracy, precision, recall, f1, roc_auc],
+                'Explicacion': [
+                    'Accuracy (Exactitud): Proporción de muestras correctamente clasificadas.',
+                    'Precision (Precisión): Media ponderada de precision para cada clase.',
+                    'Recall (Sensibilidad): Media ponderada de recall para cada clase.',
+                    'F1-score (Puntuación F1): Media ponderada de F1-score para cada clase.',
+                    'Área bajo la curva ROC, mide la capacidad de discriminación del modelo.']
+            })
+            if graficar == True:
+                cls._plot_clasificacion(y_test, y_pred_binary)
+
+        elif tipo_problema == 'regresion':
+            # Problema de regresión
+            objective = 'reg:squarederror'
+            
+            # Entrenamos el modelo XGBoost para regresión
+            xgb_model = xgb.train(params, dtrain, num_boost_round=num_boost_round)
+            
+            # Realizamos predicciones en el conjunto de prueba
+            y_pred = xgb_model.predict(dtest)
+
+            # Calculamos las métricas de regresión
+            mse = mean_squared_error(y_test, y_pred)
+            r2 = r2_score(y_test, y_pred)
+            adj_r2 = 1 - (1-r2)*(len(y_test)-1)/(len(y_test)-X_test.shape[1]-1)
+
+            # Creamos un DataFrame con las métricas y sus explicaciones
+            metrics = pd.DataFrame({
+                'Metrica': ['Mean Squared Error (MSE)', 'R-cuadrado Ajustado (Adj. R^2)'],
+                'Valor': [mse, adj_r2],
+                'Explicacion': [
+                    'Mean Squared Error (MSE): Error cuadrático medio entre las predicciones y los valores verdaderos.',
+                    'R-cuadrado Ajustado (Adj. R^2): R-cuadrado ajustado que tiene en cuenta el número de variables independientes en el modelo.']
+            })
+
+        else:
+            raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
+        
+        # Mostramos todas las explicaciones sin recortar la columna
+        pd.set_option('display.max_colwidth', None)
+
+        return metrics
+
+    @classmethod
+    def modelo_catboost(cls, df, target:str, tipo_problema:str, 
+                        test_size=0.2, num_boost_round=100,
+                        learning_rate=0.1, max_depth=3, graficar=False,
+                        random_state=np.random.randint(1, 1000)):
+        """
+        Utiliza CatBoost para predecir la variable objetivo en un DataFrame.
+
+        Parámetros:
+            df (pandas DataFrame): El DataFrame que contiene las variables de entrada y la variable objetivo.
+            target (str): El nombre de la columna que contiene la variable objetivo.
+            tipo_problema (str): Tipo de problema: 'clasificacion' o 'regresion'.
+            test_size (float): El tamaño de la muestra para el conjunto de prueba, 0.2 por defecto.
+            num_boost_round (int): El número de iteraciones del algoritmo (número de árboles), 100 por defecto.
+            learning_rate (float): Tasa de aprendizaje del modelo, 0.1 por defecto.
+            max_depth (int): Profundidad máxima de los árboles, 3 por defecto.
+            random_state (int): Semilla a usar para la división de los datos, por defecto es un número aleatorio.
+            graficar (bool): Si es True, se generan los gráficos correspondientes según el tipo de problema.
+
+        Retorna:
+            pd.DataFrame: Un DataFrame que contiene diferentes métricas y estadísticas del modelo.
+        """
+        # Separamos la variable objetivo 'y' del resto de las variables 'X'
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        # Dividimos los datos en conjuntos de entrenamiento y prueba
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+
+        # Creamos el modelo CatBoost
+        if tipo_problema == 'clasificacion':
+            loss_function = 'Logloss'
+            model = cb.CatBoostClassifier(
+                iterations=num_boost_round,
+                learning_rate=learning_rate,
+                depth=max_depth,
+                loss_function=loss_function,
+                random_state=random_state
+            )
+        elif tipo_problema == 'regresion':
+            loss_function = 'RMSE'
+            model = cb.CatBoostRegressor(
+                iterations=num_boost_round,
+                learning_rate=learning_rate,
+                depth=max_depth,
+                loss_function=loss_function,
+                random_state=random_state
+            )
+        else:
+            raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
+        
+        # Entrenamos el modelo CatBoost
+        model.fit(X_train, y_train)
+
+        # Realizamos predicciones en el conjunto de prueba
+        y_pred = model.predict(X_test)
+
+        # Calculamos las métricas de clasificación o regresión
+        if tipo_problema == 'clasificacion':
+            accuracy = accuracy_score(y_test, y_pred)
+            precision = precision_score(y_test, y_pred, average='weighted')
+            recall = recall_score(y_test, y_pred, average='weighted')
+            f1 = f1_score(y_test, y_pred, average='weighted')
+            roc_auc = roc_auc_score(y_test, y_pred)
+
+            # Creamos un DataFrame con las métricas y sus explicaciones
+            metrics = pd.DataFrame({
+                'Metrica': ['Accuracy', 'Precision', 'Recall', 'F1-score', 'AUC ROC'],
+                'Valor': [accuracy, precision, recall, f1, roc_auc],
+                'Explicacion': [
+                    'Accuracy (Exactitud): Proporción de muestras correctamente clasificadas.',
+                    'Precision (Precisión): Media ponderada de precision para cada clase.',
+                    'Recall (Sensibilidad): Media ponderada de recall para cada clase.',
+                    'F1-score (Puntuación F1): Media ponderada de F1-score para cada clase.',
+                    'Área bajo la curva ROC, mide la capacidad de discriminación del modelo.']
+            })
+        else:
+            mse = mean_squared_error(y_test, y_pred)
+            r2 = r2_score(y_test, y_pred)
+            adj_r2 = 1 - (1-r2)*(len(y_test)-1)/(len(y_test)-X_test.shape[1]-1)
+
+            # Creamos un DataFrame con las métricas y sus explicaciones
+            metrics = pd.DataFrame({
+                'Metric': ['Mean Squared Error (MSE)', 'R-cuadrado Ajustado (Adj. R^2)'],
+                'Valor': [mse, adj_r2],
+                'Explicacion': [
+                    'Mean Squared Error (MSE): Error cuadrático medio entre las predicciones y los valores verdaderos.',
+                    'R-cuadrado Ajustado (Adj. R^2): R-cuadrado ajustado que tiene en cuenta el número de variables independientes en el modelo.',
+                    ]
+            })
+
+        # Mostramos todas las explicaciones sin recortar la columna
+        pd.set_option('display.max_colwidth', None)
+
+        if graficar:
+            if tipo_problema == 'clasificacion':
+                cls._plot_clasificacion(y_test, y_pred)
+            else:
+                cls._plot_regresion(y_test, y_pred)
+
+        return metrics
 
     @classmethod
     def _plot_clasificacion(cls, y_true, y_pred):
