@@ -1,8 +1,8 @@
 numpy
 pandas
-matplotlib
-plotly
-lightgbm
 scikit-learn
+plotly
+matplotlib
+lightgbm
 xgboost
-statsmodels
+catboost
