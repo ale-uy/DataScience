@@ -75,7 +75,7 @@ class Tools:
     @classmethod
     def dividir_y_convertir_datos(cls, df, target:str, test_size=0.2, 
                       random_state=np.random.randint(1, 1000), 
-                      encode_categorical=True)->tuple:
+                      encode_categorical=False)->tuple:
         """
         Divide los datos en conjuntos de entrenamiento y prueba y opcionalmente codifica las variables categóricas.
 
@@ -84,7 +84,7 @@ class Tools:
             target (str): El nombre de la columna objetivo.
             test_size (float): El tamaño del conjunto de prueba. Por defecto es 0.2.
             random_state (int): La semilla aleatoria para la división de los datos. Por defecto es un valor aleatorio.
-            encode_categorical (bool): Indica si se deben codificar automáticamente las variables categóricas. Por defecto es True.
+            encode_categorical (bool): Indica si se deben codificar automáticamente las variables categóricas. Por defecto es False.
             
         Retorna:
             tuple: Una tupla que contiene los conjuntos de entrenamiento y prueba en el orden: 
@@ -97,12 +97,15 @@ class Tools:
         # Codificar automáticamente las variables categóricas utilizando pd.Categorical
         if encode_categorical:
             categorical_columns = X.select_dtypes(include=['object']).columns
-            X[categorical_columns] = X[categorical_columns].apply(lambda col: pd.Categorical(col))
+            label_encoder = LabelEncoder()
+            for col in categorical_columns:
+                X[col] = label_encoder.fit_transform(X[col])
             # Verificamos si la variable objetivo es numérica
             if not np.issubdtype(y.dtype, np.number):
                 # Si no es numérica, la convertimos utilizando LabelEncoder
                 label_encoder = LabelEncoder()
-                y = label_encoder.fit_transform(y)
+                y_encoded = label_encoder.fit_transform(y)
+                y = pd.Series(y_encoded, name=target)
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
@@ -134,11 +137,7 @@ class Tools:
             pandas DataFrame: Un DataFrame que contiene las métricas y sus respectivos valores, junto con una breve explicación para cada métrica.
         """
 
-        # Verificar el tipo de valores en y_test y y_pred
-        y_type = type(y_test[0])
-        y_pred_type = type(y_pred[0])
-
-        if (y_type == int and y_pred_type == int) or tipo_metricas == "clas":
+        if tipo_metricas == "clas":
             # Valores de clasificación
             accuracy = accuracy_score(y_test, y_pred)
             precision = precision_score(y_test, y_pred)
@@ -157,7 +156,7 @@ class Tools:
                     'Área bajo la curva ROC, que mide la capacidad de discriminación del modelo.']
             })
 
-        elif (y_type == float and y_pred_type == float) or tipo_metricas == "reg":
+        elif tipo_metricas == "reg":
             # Valores de regresión
             mse = mean_squared_error(y_test, y_pred)
             mae = mean_absolute_error(y_test, y_pred)
@@ -263,8 +262,8 @@ class ML:
 
     @classmethod
     def modelo_lightgbm(cls, df, target:str, tipo_problema:str, random_state=np.random.randint(1,1000),
-                        boosting_type='gbdt', num_boost_round=100, graficar=False, test_size=0.2, 
-                        learning_rate=0.1, max_depth=-1, save_model=False, model_filename='lightgbm'):
+                        boosting_type='gbdt', num_boost_round=100, graficar=False, test_size=0.2, learning_rate=0.1, 
+                        max_depth=-1, save_model=False, model_filename='lightgbm', encode_categorical=False):
         """
         Utiliza LightGBM para predecir la variable objetivo en un DataFrame.
 
@@ -296,7 +295,10 @@ class ML:
         """
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
-        X_train, X_test, y_train, y_test = Tools.dividir_y_convertir_datos(df, target,test_size=test_size,random_state=random_state)
+        X_train, X_test, y_train, y_test = Tools.dividir_y_convertir_datos(df, target,
+                                                                           test_size=test_size,
+                                                                           random_state=random_state,
+                                                                           encode_categorical=encode_categorical)
 
         # Creamos el dataset LightGBM
         lgb_train = lgb.Dataset(X_train, y_train)

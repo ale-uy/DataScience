@@ -17,8 +17,6 @@ from sklearn.utils import resample
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, RobustScaler, StandardScaler
 
-pd.set_option('display.max_colwidth', None) # Mostrar todo el ancho de las celdas en el DataFrame
-
 
 class Eda:
 
@@ -52,19 +50,21 @@ class Eda:
             metodo (str): El método de codificación a utilizar. Opciones válidas:
                 - "dummy": Codificación dummy.
                 - "ohe": OneHotEncoding.
-                - "label": LabelEncode.
+                - "label": LabelEncoder.
             drop_first (bool): Elimina la primer dummy en caso de utilizar "dummy". Por defecto es True.
         Retorna:
             pandas DataFrame: El DataFrame original con las columnas categóricas codificadas, excluyendo la columna objetivo.
         """
+
         # Separamos la columna objetivo 'y' del resto del conjunto de datos 'X'
         y = df[target]
         if not np.issubdtype(y.dtype, np.number):
-            # Utilizamos LabelEncoder para codificar la variable objetivo
+            # Si y no es numérica, la convertimos utilizando LabelEncoder
             label_encoder = LabelEncoder()
-            y = label_encoder.fit_transform(y)
-
+            y_encoded = label_encoder.fit_transform(df[target])
+            y = pd.Series(y_encoded, name=target)
         X = df.drop(target, axis=1)
+
         # Utilizamos los metodos
         if metodo == "dummy":
             """
@@ -80,7 +80,7 @@ class Eda:
             # Convierto a dummy
             X = pd.get_dummies(X, drop_first=drop_first)
             # Unir el DataFrame imputado con las columnas categóricas codificadas al DataFrame 'Xy'
-            df_codificado = pd.concat([X, y], axis=1) # type: ignore
+            df_codificado = pd.concat([X, y], axis=1)
         elif metodo == "ohe":
             """
             Este método realiza el OneHotEncoding para todas las columnas categóricas en el DataFrame, 
@@ -103,28 +103,22 @@ class Eda:
             # Descartar las columnas categóricas originales del DataFrame 'X'
             X = X.drop(object_columns, axis=1).reset_index(drop=True)
             # Unir el DataFrame imputado con las columnas categóricas codificadas al DataFrame 'Xy'
-            df_codificado = pd.concat([X, X_encoded, y], axis=1) # type: ignore
+            df_codificado = pd.concat([X, X_encoded, y], axis=1)
         elif metodo == "label":
             """
             Realiza la codificación de variables categóricas utilizando LabelEncoder.
-
             Retorna:
                 pandas DataFrame: El DataFrame original con las columnas categóricas codificadas
                 mediante LabelEncoder, INCLUYENDO la columna objetivo.
             """
             # Creamos el DataFrame auxiliar 'X'
-            X = df.copy(deep=True)
-
+            df_codificado = df.copy(deep=True)
             # Obtener las columnas categóricas a codificar automáticamente en función de su tipo de datos 'object'
-            object_columns = X.select_dtypes(include=['object']).columns
-
+            object_columns = df_codificado.select_dtypes(include=['object']).columns
             # Crear un objeto LabelEncoder para cada columna categórica y transformar los datos
             label_encoders = {col: LabelEncoder() for col in object_columns}
             for col in object_columns:
-                X[col] = label_encoders[col].fit_transform(X[col])
-
-            # Regresar el DataFrame 'X' completo con las columnas categóricas codificadas
-            return X
+                df_codificado[col] = label_encoders[col].fit_transform(df_codificado[col])
         else:
             raise ValueError("El parámetro 'metodo' debe ser uno de: 'dummy', 'ohe', 'label'.")
         # Regresar el DataFrame 'df_codificado' completo con las columnas categóricas codificadas
@@ -139,9 +133,10 @@ class Eda:
                        Por defecto es 0.5 (50%).
         """
         nan_percentages = df.isna().mean()
-        mask = nan_percentages >= p
-        aux = df.loc[:, ~mask]
+        columns_to_drop = nan_percentages[nan_percentages >= p].index
+        aux = df.drop(columns=columns_to_drop)
         return aux
+
     
     @classmethod
     def imputar_faltantes(cls, df, metodo="mm", n_neighbors=5):
@@ -275,15 +270,15 @@ class Eda:
     @classmethod
     def all_eda(cls,df,
                 target:str,
-                balancear=False,
                 p=0.5,
                 imputar=True,
                 metodo_imputar="mm",
+                n_neighbors=5,
                 convertir=True,
                 metodo_convertir="ohe",
-                n_neighbors=5,
                 estandarizar=False,
                 metodo_estandarizar="zscore",
+                balancear=False,
                 mezclar=False):
         """
         Realiza un Análisis Exploratorio de Datos (EDA) completo en un DataFrame dado.
@@ -358,7 +353,7 @@ class Graph:
         plt.show()
 
     @classmethod
-    def grafico_histograma(cls, df, column:str)->None:
+    def plot_histogram(cls, df, column:str)->None:
         """
         Genera un histograma interactivo para una columna específica del DataFrame.
         Parameters:
@@ -368,7 +363,7 @@ class Graph:
         fig.show()
 
     @classmethod
-    def grafico_caja(cls, df, x:str, y:str)->None:
+    def plot_boxplot(cls, df, x:str, y:str)->None:
         """
         Genera un gráfico de caja interactivo para una variable y en función de otra variable x.
         Parameters:
@@ -379,7 +374,7 @@ class Graph:
         fig.show()
 
     @classmethod
-    def grafico_dispersion(cls, df, x:str, y:str)->None:
+    def plot_scatter(cls, df, x:str, y:str)->None:
         """
         Genera un gráfico de dispersión interactivo para dos variables x e y.
         Parameters:
