@@ -3,6 +3,7 @@
 Autor: ale-uy
 Fecha: 2 Mayo 2023
 Actualizado: 31 Julio 2023
+Version: v2
 Archivo: eda_vx.py
 Descripción: Automatizar procesos de analisis y limpieza dn datos
 Licencia: Apache License Version 2.0

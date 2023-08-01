@@ -3,6 +3,7 @@
 Autor: ale-uy
 Fecha: 31 Julio 2023
 Actualizado: 31 Julio 2023
+Version: v1
 Archivo: ml_vx.py
 Descripción: Automatizar procesos de machine learning
 Licencia: Apache License Version 2.0
