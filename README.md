@@ -97,7 +97,7 @@ Para usar el modelo guardado con nuevos datos, usaremos el siguiente codigo
 import joblib
 
 # Ruta y nombre del archivo donde se guardó el modelo
-model_filename = "nombre_del_archivo.pkl'
+model_filename = "nombre_del_archivo.pkl"
 # Cargar el modelo
 loaded_model = joblib.load(model_filename)
 # Ahora puedes utilizar el modelo cargado para hacer predicciones
