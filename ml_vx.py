@@ -2,8 +2,7 @@
 """
 Autor: ale-uy
 Fecha: 31 Julio 2023
-Actualizado: 31 Julio 2023
-Version: v1
+Actualizado: 3 Agosto 2023 (v2_c)
 Archivo: ml_vx.py
 Descripción: Automatizar procesos de machine learning
 Licencia: Apache License Version 2.0
@@ -16,13 +15,16 @@ import lightgbm as lgb
 import xgboost as xgb
 import catboost as cb
 from sklearn.preprocessing import LabelEncoder
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, AdaBoostRegressor
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, AdaBoostClassifier, AdaBoostRegressor
+from sklearn.model_selection import GridSearchCV, cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error, confusion_matrix, \
-    mean_squared_log_error, precision_score, recall_score, f1_score, roc_auc_score, r2_score
+    precision_score, recall_score, f1_score, roc_auc_score, r2_score #mean_squared_log_error
 import joblib
+import warnings
 
 pd.set_option('display.max_colwidth', None) # Mostrar todo el ancho de las celdas en el DataFrame
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class Tools:
@@ -151,7 +153,7 @@ class Tools:
                 'Valor': [accuracy, precision, recall, f1, roc_auc],
                 'Explicacion': [
                     '(Exactitud) Proporción de muestras correctamente clasificadas.',
-                    'Precisión Proporción de muestras positivas correctamente identificadas entre todas las muestras clasificadas como positivas.',
+                    'Proporción de muestras positivas correctamente identificadas entre todas las muestras clasificadas como positivas.',
                     '(Sensibilidad) Proporción de muestras positivas correctamente identificadas entre todas las muestras reales positivas.',
                     'Media armónica entre precisión y recall. Es útil cuando hay un desequilibrio entre las clases.',
                     'Área bajo la curva ROC, que mide la capacidad de discriminación del modelo.']
@@ -161,22 +163,20 @@ class Tools:
             # Valores de regresión
             mse = mean_squared_error(y_test, y_pred)
             mae = mean_absolute_error(y_test, y_pred)
-            mape = np.mean(np.abs((y_test - y_pred) / y_test)) * 100
-            rmsle = np.sqrt(mean_squared_log_error(y_test, y_pred))
+            #rmsle = np.sqrt(mean_squared_log_error(y_test, y_pred))
             r2_adj = r2_score(y_test, y_pred, multioutput='variance_weighted')
             rmse = np.sqrt(mse)
 
             metric_df = pd.DataFrame({
                 'Metrica': ['Mean Squared Error (MSE)', 'Root Mean Squared Error (RMSE)', 
-                            'Mean Absolute Error (MAE)', 'Mean Absolute Percentage Error (MAPE)', 
-                            'Root Mean Squared Logarithmic Error (RMSLE)', 'Adjusted R-cuadrado (R^2 ajustado)'],
-                'Valor': [mse, rmse, mae, mape, rmsle, r2_adj],
+                            'Mean Absolute Error (MAE)', 'Adjusted R-cuadrado (R^2 ajustado)'
+                            ], #'Root Mean Squared Logarithmic Error (RMSLE)'
+                'Valor': [mse, rmse, mae, r2_adj],#rmsle
                 'Explicacion': [
                     'Mean Squared Error (MSE): Error cuadrático medio entre las predicciones y los valores verdaderos.',
                     'Root Mean Squared Error (RMSE): Raíz cuadrada del MSE, indica el error promedio de las predicciones.',
                     'Mean Absolute Error (MAE): Error absoluto medio entre las predicciones y los valores verdaderos.',
-                    'Mean Absolute Percentage Error (MAPE): Porcentaje promedio del error absoluto entre las predicciones y los valores verdaderos.',
-                    'Root Mean Squared Logarithmic Error (RMSLE): Raíz cuadrada del error logarítmico cuadrático medio entre las predicciones y los valores verdaderos.',
+                    #'Root Mean Squared Logarithmic Error (RMSLE): Raíz cuadrada del error logarítmico cuadrático medio entre las predicciones y los valores verdaderos.',
                     'Adjusted R-cuadrado (R^2 ajustado): R-cuadrado ajustado que penaliza la adición de variables irrelevantes en el modelo.']
             })
 
@@ -185,6 +185,34 @@ class Tools:
 
         return metric_df
 
+    @classmethod
+    def busqueda_rejilla(cls, model, param_grid, X_train, y_train, scoring='accuracy', cv=5):
+        """
+        Realiza una búsqueda de hiperparámetros utilizando GridSearchCV.
+
+        Parámetros:
+            model: El estimador del modelo que deseas ajustar.
+            param_grid: Un diccionario con los hiperparámetros y sus posibles valores.
+            X_train: Conjunto de entrenamiento de características.
+            y_train: Etiquetas del conjunto de entrenamiento.
+            scoring: La métrica de evaluación. Por defecto es 'accuracy'.
+            cv: Número de particiones para validación cruzada. Por defecto es 5.
+
+        Retorna:
+            dict: Un diccionario que contiene los mejores hiperparámetros encontrados y el mejor puntaje.
+        """
+        grid_search = GridSearchCV(estimator=model, param_grid=param_grid, scoring=scoring, cv=cv)
+        grid_search.fit(X_train, y_train)
+
+        best_params = grid_search.best_params_
+        best_score = grid_search.best_score_
+
+        result = {
+            'best_params': best_params,
+            'best_score': best_score
+        }
+
+        return result
 
 class Graphs:
 
@@ -263,8 +291,9 @@ class ML:
 
     @classmethod
     def modelo_lightgbm(cls, df, target:str, tipo_problema:str, random_state=np.random.randint(1,1000),
-                        boosting_type='gbdt', num_boost_round=100, graficar=False, test_size=0.2, learning_rate=0.1, 
-                        max_depth=-1, save_model=False, model_filename='lightgbm', encode_categorical=False):
+                        num_leaves=20, num_boost_round=100, graficar=False, test_size=0.2,
+                        learning_rate=0.1, max_depth=-1, save_model=False, model_filename='lightgbm', 
+                        encode_categorical=False, rejilla=False, boosting_type='gbdt'):
         """
         Utiliza LightGBM para predecir la variable objetivo en un DataFrame.
 
@@ -272,12 +301,20 @@ class ML:
             df (pandas DataFrame): El DataFrame que contiene las variables de entrada y la variable objetivo.
             target (str): El nombre de la columna que contiene la variable objetivo.
             tipo_problema (str): Tipo de problema: 'clasificacion' o 'regresion'.
-            boosting_type (str): Posibles opciones: 'rf', 'gbdt' (default), 'goss', 'dart'.
+            num_leaves (int): Número máximo de hojas en cada árbol. Controla la complejidad del modelo. Defecto 20.
             num_boost_round (int): El número de iteraciones del algoritmo (número de árboles), 100 por defecto.
             learning_rate (float): Tasa de aprendizaje del modelo, 0.1 por defecto.
             max_depth (int): Profundidad máxima de los árboles, -1 por defecto (sin límite).
             save_model (bool): Si es True, el modelo entrenado se guardará en disco. Por defecto es False.
             model_filename (str): El nombre del archivo para guardar el modelo. Requerido si save_model es True.
+            rejilla (bool): Indica si se debe realizar una búsqueda de hiperparámetros utilizando GridSearch.
+                Si es True, se realizará una búsqueda exhaustiva de hiperparámetros para optimizar el rendimiento
+                del modelo LightGBM. Si es False (por defecto), no se realizará la búsqueda de hiperparámetros.
+            boosting_type (str): Tipo de algoritmo de boosting a utilizar.
+                Opciones disponibles:
+                - 'gbdt': Gradient Boosting Decision Tree (por defecto).
+                - 'dart': Dropouts meet Multiple Additive Regression Trees.
+                - 'goss': Gradient-based One-Side Sampling.
             NOTA: para cargar modelo hacer:
                 import joblib
 
@@ -294,52 +331,80 @@ class ML:
         Retorna:
             tuple: Una tupla que contiene las métricas y las predicciones en el orden: (metrics, y_pred).
         """
-
+        
         # Dividimos los datos en conjuntos de entrenamiento y prueba
         X_train, X_test, y_train, y_test = Tools.dividir_y_convertir_datos(df, target,
                                                                            test_size=test_size,
                                                                            random_state=random_state,
                                                                            encode_categorical=encode_categorical)
 
-        # Creamos el dataset LightGBM
-        lgb_train = lgb.Dataset(X_train, y_train)
+        if rejilla:
+            # Definir el espacio de búsqueda de hiperparámetros
+            params = {
+                'boosting_type': ['gbdt', 'dart', 'goss'],
+                'num_boost_round': [100, 200],
+                'learning_rate': [0.01, 0.05, 0.1],
+                'max_depth': [3, 5, 7],
+                'num_leaves': [20, 31, 63],
+            }
+            # Definir el estimador y el scoring según el tipo de problema
+            estimator = lgb.LGBMClassifier() if tipo_problema=='clasificacion' else lgb.LGBMRegressor()
+            scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
+            # Realizar búsqueda de rejilla utilizando el método de Tools
+            best_params = Tools.busqueda_rejilla(estimator, 
+                                            params, 
+                                            X_train, y_train,
+                                            scoring, 
+                                            cv=3)
+            # Mostramos los valores seleccionados por GridSearch
+            print(pd.DataFrame(best_params))
+            # Utilizar los mejores hiperparámetros encontrados
+            params = best_params['best_params']
 
-        # Parámetros del modelo LightGBM
-        params = {
-            'boosting_type': boosting_type,
-            'learning_rate': learning_rate,
-            'max_depth': max_depth
-        }
+        else:
+            # Parámetros manuales del modelo LightGBM
+            params = {
+                'num_leaves': num_leaves,
+                'learning_rate': learning_rate,
+                'max_depth': max_depth,
+                'boosting_type': boosting_type,
+                'num_boost_round': num_boost_round
+            }
 
         if tipo_problema == 'clasificacion':
             # Problema de clasificación binaria
-            params['objective'] = 'binary'
-            params['metric'] = 'binary_logloss'
-            # Entrenamos el modelo LightGBM para clasificación
-            lgb_model = lgb.train(params, lgb_train, num_boost_round=num_boost_round)
-            # Realizamos predicciones en el conjunto de prueba
-            y_pred = lgb_model.predict(X_test)
-            y_pred_binary = np.round(y_pred)  # Convertimos las predicciones a 0 o 1
-            # Calculamos las métricas de clasificación
-            metrics = Tools.metricas(y_test, y_pred_binary, tipo_metricas='clas')
-            if graficar:
-                Graphs.plot_clasificacion(y_test, y_pred_binary)
+            params['objective'] = ['binary'] if y_train.nunique() == 2 else ['multiclass']
+            params['metric'] = ['binary_logloss'] if y_train.nunique() == 2 else ['multi_logloss']
+            # Crear el modelo LightGBM con los mejores hiperparámetros y entrenarlo
+            lgb_model = lgb.LGBMClassifier(**params)
+            tipo_metricas='clas'
 
         elif tipo_problema == 'regresion':
             # Problema de regresión
             params['objective'] = 'regression'
             params['metric'] = 'l2'  # MSE (Error Cuadrático Medio)
-            # Entrenamos el modelo LightGBM para regresión
-            lgb_model = lgb.train(params, lgb_train, num_boost_round=num_boost_round)
-            # Realizamos predicciones en el conjunto de prueba
-            y_pred = lgb_model.predict(X_test)
-            # Calculamos las metricas
-            metrics = Tools.metricas(y_test, y_pred, tipo_metricas='reg')
-            if graficar:
-                Graphs.plot_regresion(y_test, y_pred)
+            # Crear el modelo LightGBM con los mejores hiperparámetros y entrenarlo
+            lgb_model = lgb.LGBMRegressor(**params)
+            tipo_metricas='reg'
 
         else:
             raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
+
+        # Entrenar el modelo
+        lgb_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=10, verbose=50)
+        
+        # Realizar predicciones en el conjunto de prueba
+        y_pred = lgb_model.predict(X_test)
+        # Realizamos predicciones en el conjunto de prueba
+        y_pred = lgb_model.predict(X_test)
+        
+        # Calculamos las métricas de clasificación
+        metrics = Tools.metricas(y_test, y_pred, tipo_metricas=tipo_metricas)
+        
+        if graficar and tipo_problema == 'clasificacion':
+            Graphs.plot_clasificacion(y_test, y_pred)
+        elif graficar and tipo_problema == 'regresion':
+            Graphs.plot_regresion(y_test, y_pred)
 
         if save_model and model_filename:
             # Guardar el modelo entrenado en disco
@@ -350,8 +415,8 @@ class ML:
     @classmethod
     def modelo_xgboost(cls, df, target:str, tipo_problema:str, test_size=0.2,
                 num_boost_round=100, save_model=False, model_filename='xgboost',
-                learning_rate=0.1, max_depth=3, objective='binary:logistic',
-                random_state=np.random.randint(1, 1000), graficar=False):
+                learning_rate=0.1, max_depth=3, random_state=np.random.randint(1, 1000),
+                graficar=False,rejilla=False):
         """
         Utiliza XGBoost para predecir la variable objetivo en un DataFrame.
 
@@ -389,39 +454,65 @@ class ML:
         # Creamos el objeto DMatrix de XGBoost
         dtrain = xgb.DMatrix(X_train, label=y_train)
         dtest = xgb.DMatrix(X_test, label=y_test)
-        # Parámetros del modelo XGBoost
-        params = {
-            'objective': objective,
-            'learning_rate': learning_rate,
-            'max_depth': max_depth
-        }
+
+        if rejilla:
+            # Parámetros del modelo XGBoost
+            params = {
+                'max_depth': [3, 6, 9],  # Profundidad máxima de los árboles
+                'learning_rate': [0.1, 0.01, 0.001],  # Tasa de aprendizaje
+                'subsample': [0.8, 0.9, 1.0],  # Tamaño del submuestreo
+                'colsample_bytree': [0.7, 0.8, 0.9],  # Fracción de características a considerar por cada árbol
+            }
+            # Definir el estimador y el scoring según el tipo de problema
+            estimator = xgb.XGBClassifier() if tipo_problema=='clasificacion' else xgb.XGBRegressor()
+            scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
+            # Realizar búsqueda de rejilla utilizando el método de Tools
+            best_params = Tools.busqueda_rejilla(estimator, 
+                                            params, 
+                                            X_train, y_train,
+                                            scoring, 
+                                            cv=3)
+            # Mostramos los valores seleccionados por GridSearch
+            print(pd.DataFrame(best_params))
+            # Utilizar los mejores hiperparámetros encontrados
+            params = best_params['best_params']
+
+        else:
+            params = {
+            'max_depth': max_depth,
+            'learning_rate': learning_rate
+            }
+
         if tipo_problema == 'clasificacion':
             # Problema de clasificación binaria o multiclase
-            if objective == 'reg:squarederror':
-                raise ValueError("La función objetivo debe ser 'binary:logistic' o 'multi:softmax' para un problema de clasificación.")
+            params['objective'] = 'binary:logistic' if y_test.nunique() == 2 else 'multi:softmax'
             
             # Entrenamos el modelo XGBoost para clasificación
-            xgb_model = xgb.train(params, dtrain, num_boost_round=num_boost_round)
+            xgb_model = xgb.XGBClassifier(**params)
+            xgb_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=10, verbose=False)
             
             # Realizamos predicciones en el conjunto de prueba
-            y_pred = xgb_model.predict(dtest)
-            if 'binary' in objective:
-                y_pred_binary = (y_pred > 0.5).astype(int)
+            y_pred = xgb_model.predict(X_test)
+            if params['objective'] == 'binary:logistic':
+                y_pred_binary = np.where(y_pred > 0.5, 1, 0)
             else:
                 y_pred_binary = np.argmax(y_pred, axis=1)
             metrics = Tools.metricas(y_test,y_pred_binary,tipo_metricas='clas')
             if graficar == True:
                 Graphs.plot_clasificacion(y_test, y_pred_binary)
+
         elif tipo_problema == 'regresion':
             # Problema de regresión
-            objective = 'reg:squarederror'
-            
+            params['objective'] = 'reg:squarederror'
+
             # Entrenamos el modelo XGBoost para regresión
-            xgb_model = xgb.train(params, dtrain, num_boost_round=num_boost_round)
+            xgb_model = xgb.XGBRegressor(**params)
+            xgb_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=10, verbose=False)
             
             # Realizamos predicciones en el conjunto de prueba
-            y_pred = xgb_model.predict(dtest)
+            y_pred = xgb_model.predict(X_test)
             metrics = Tools.metricas(y_test, y_pred,tipo_metricas='reg')
+
         else:
             raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
         
@@ -435,7 +526,7 @@ class ML:
     def modelo_catboost(cls, df, target:str, tipo_problema:str, test_size=0.2,
                         num_boost_round=100, learning_rate=0.1, max_depth=3,
                         random_state=np.random.randint(1, 1000), graficar=False,
-                        save_model=False, model_filename='catoost'):
+                        save_model=False, model_filename='catoost', rejilla=False):
         """
         Utiliza CatBoost para predecir la variable objetivo en un DataFrame.
 
@@ -449,6 +540,7 @@ class ML:
             max_depth (int): Profundidad máxima de los árboles, 3 por defecto.
             random_state (int): Semilla a usar para la división de los datos, por defecto es un número aleatorio.
             graficar (bool): Si es True, se generan los gráficos correspondientes según el tipo de problema.
+            rejilla (bool): Si es True, se usa  gridsearch para buscar mejores valores en los hiperparametros. Default es False.
             
             NOTA: para cargar modelo hacer:
                 import joblib
@@ -469,30 +561,46 @@ class ML:
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
         X_train, X_test, y_train, y_test = Tools.dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
+        if rejilla:
+            params = {
+                'learning_rate': [0.01, 0.05, 0.1],
+                'depth': [6, 8, 10],
+                'border_count': [128, 254, 512],
+                'num_boost_round': [100, 200, 300]
+            }
+            # Definir el estimador y el scoring según el tipo de problema
+            estimator = cb.CatBoostClassifier() if tipo_problema=='clasificacion' else cb.CatBoostRegressor()
+            scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
+            # Realizar búsqueda de rejilla utilizando el método de Tools
+            best_params = Tools.busqueda_rejilla(estimator, 
+                                            params, 
+                                            X_train, y_train,
+                                            scoring, 
+                                            cv=3)
+            # Mostramos los valores seleccionados por GridSearch
+            print(pd.DataFrame(best_params))
+            # Utilizar los mejores hiperparámetros encontrados
+            params = best_params['best_params']
+        else:
+            params = {
+                'num_boost_round': num_boost_round,
+                'learning_rate': learning_rate,
+                'depth': max_depth,
+                'random_state': random_state
+            }
+
         # Creamos el modelo CatBoost
         if tipo_problema == 'clasificacion':
-            loss_function = 'Logloss'
-            model = cb.CatBoostClassifier(
-                iterations=num_boost_round,
-                learning_rate=learning_rate,
-                depth=max_depth,
-                loss_function=loss_function,
-                random_state=random_state
-            )
+            params['loss_function'] = 'Logloss'
+            model = cb.CatBoostClassifier(**params)
         elif tipo_problema == 'regresion':
-            loss_function = 'RMSE'
-            model = cb.CatBoostRegressor(
-                iterations=num_boost_round,
-                learning_rate=learning_rate,
-                depth=max_depth,
-                loss_function=loss_function,
-                random_state=random_state
-            )
+            params['loss_function'] = 'RMSE'
+            model = cb.CatBoostRegressor(**params)
         else:
             raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
 
         # Entrenamos el modelo CatBoost
-        model.fit(X_train, y_train)
+        model.fit(X_train, y_train, eval_set=(X_test, y_test), early_stopping_rounds=10, verbose=50)
         # Realizamos predicciones en el conjunto de prueba
         y_pred = model.predict(X_test)
         # Calculamos las métricas de clasificación o regresión
@@ -514,68 +622,96 @@ class ML:
         return metrics
     
     @classmethod
-    def modelo_adaboost(cls, df, target:str, tipo_problema:str, 
+    def modelo_adaboost(cls, df, target:str, tipo_problema:str,
                         test_size=0.2, n_estimators=50, learning_rate=1.0,
                         random_state=np.random.randint(1, 1000), graficar=False,
-                        save_model=False, model_filename='catoost'):
+                        save_model=False, model_filename='catoost', rejilla=False):
         """
         Utiliza AdaBoost para predecir la variable objetivo en un DataFrame.
 
-        Parámetros:
-            df (pandas DataFrame): El DataFrame que contiene las variables de entrada y la variable objetivo.
-            target (str): El nombre de la columna que contiene la variable objetivo.
-            tipo_problema (str): Tipo de problema: 'clasificacion' o 'regresion'.
-            test_size (float): El tamaño de la muestra para el conjunto de prueba, 0.2 por defecto.
-            n_estimators (int): El número de estimadores (número de árboles), 50 por defecto.
-            learning_rate (float): Tasa de aprendizaje del modelo, 1.0 por defecto.
-            random_state (int): Semilla a usar para la división de los datos, por defecto es un número aleatorio.
-            graficar (bool): Si es True, se generan los gráficos correspondientes según el tipo de problema.
+        :param df: pandas DataFrame
+            El DataFrame que contiene las variables de entrada y la variable objetivo.
+        :param target: str
+            El nombre de la columna que contiene la variable objetivo.
+        :param tipo_problema: str
+            Tipo de problema: 'clasificacion' o 'regresion'.
+        :param test_size: float, opcional (default=0.2)
+            El tamaño de la muestra para el conjunto de prueba.
+        :param n_estimators: int, opcional (default=50)
+            El número de estimadores (número de árboles).
+        :param learning_rate: float, opcional (default=1.0)
+            Tasa de aprendizaje del modelo.
+        :param random_state: int, opcional (default=random)
+            Semilla a usar para la división de los datos.
+        :param graficar: bool, opcional (default=False)
+            Si es True, se generan gráficos correspondientes según el tipo de problema.
+        :param save_model: bool, opcional (default=False)
+            Si es True, se guarda el modelo entrenado en disco.
+        :param model_filename: str, opcional (default='catoost')
+            Nombre del archivo donde se guardará el modelo.
+        :param rejilla: bool, opcional (default=False)
+            Utiliza un GridSearch para buscar los mejores hiperparámetros.
 
-            NOTA: para cargar modelo hacer:
-                import joblib
-
-                # Ruta y nombre del archivo donde se guardó el modelo
-                model_filename = "nombre_del_archivo.pkl"
-
-                # Cargar el modelo
-                loaded_model = joblib.load(model_filename)
-
-                # Ahora puedes utilizar el modelo cargado para hacer predicciones
-                # Supongamos que tienes un conjunto de datos 'X_test' para hacer predicciones
-                y_pred = loaded_model.predict(X_test)
-
-        Retorna:
-            pd.DataFrame: Un DataFrame que contiene diferentes métricas y estadísticas del modelo.
+        :return: pandas DataFrame
+            Un DataFrame con diferentes métricas y estadísticas del modelo.
         """
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
-        X_train, X_test, y_train, y_test = Tools.dividir_y_convertir_datos(df,target,test_size=test_size, random_state=random_state)
-        
-        # Creamos el modelo AdaBoost
+        X_train, X_test, y_train, y_test = Tools.dividir_y_convertir_datos(df, target, test_size=test_size, random_state=random_state)
+
+        # Crear el algoritmo base que se usará en AdaBoost
+        base_estimator = RandomForestClassifier() if tipo_problema == 'clasificacion' \
+            else RandomForestRegressor()
+
+        if rejilla:
+            # Configuración de hiperparámetros para la búsqueda en cuadrícula
+            params = {
+                'n_estimators': [50, 100],
+                'learning_rate': [0.01, 0.1]
+            }
+
+            # Crear el modelo AdaBoost
+            estimator = AdaBoostClassifier(estimator=base_estimator) if tipo_problema == 'clasificacion' \
+                else AdaBoostRegressor(estimator=base_estimator)
+
+            scoring = 'neg_log_loss' if tipo_problema == 'clasificacion' else 'neg_mean_squared_error'
+            # Realizar búsqueda de rejilla utilizando el método de Tools
+            best_params = Tools.busqueda_rejilla(estimator, params, X_train, y_train, scoring, cv=3)
+            # Mostramos los valores seleccionados por GridSearch
+            print(pd.DataFrame(best_params))
+            # Utilizar los mejores hiperparámetros encontrados
+            params = best_params['best_params']
+
+        else:
+            # Configuración de hiperparámetros sin búsqueda en cuadrícula
+            params = {
+                'n_estimators': n_estimators,
+                'learning_rate': learning_rate
+            }
+
+        # Crear el modelo AdaBoost
         if tipo_problema == 'clasificacion':
             model = AdaBoostClassifier(
-                n_estimators=n_estimators,
-                learning_rate=learning_rate,
-                random_state=random_state
+                estimator=base_estimator,
+                **params
             )
         elif tipo_problema == 'regresion':
             model = AdaBoostRegressor(
-                n_estimators=n_estimators,
-                learning_rate=learning_rate,
-                random_state=random_state
+                estimator=base_estimator,
+                **params
             )
         else:
             raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
 
-        # Entrenamos el modelo AdaBoost
+        # Entrenar el modelo AdaBoost
         model.fit(X_train, y_train)
-        # Realizamos predicciones en el conjunto de prueba
+        # Realizar predicciones en el conjunto de prueba
         y_pred = model.predict(X_test)
-        # Calculamos las métricas de clasificación o regresión
+        # Calcular las métricas de clasificación o regresión
         if tipo_problema == 'clasificacion':
-            metrics = Tools.metricas(y_test,y_pred,tipo_metricas='clas')
+            metrics = Tools.metricas(y_test, y_pred, tipo_metricas='clas')
         else:
-            metrics = Tools.metricas(y_test,y_pred,tipo_metricas='reg')
+            metrics = Tools.metricas(y_test, y_pred, tipo_metricas='reg')
 
         if graficar:
             if tipo_problema == 'clasificacion':
