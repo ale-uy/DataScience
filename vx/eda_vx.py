@@ -2,7 +2,7 @@
 """
 Autor: ale-uy
 Fecha: 2 Mayo 2023
-Actualizado: 31 Julio 2023
+Actualizado: 7 Agosto 2023
 Version: v2
 Archivo: eda_vx.py
 Descripción: Automatizar procesos de analisis y limpieza dn datos
@@ -42,7 +42,7 @@ class Eda:
         print(df.select_dtypes('number').describe().T)
 
     @classmethod
-    def convertir_a_numericas(cls, df, target:str, metodo="ohe", drop_first=True):
+    def convertir_a_numericas(cls, df, target:str=None, metodo="ohe", drop_first=True):
         """
         Realiza la codificación de variables categóricas utilizando diferentes métodos.
         Parámetros:
@@ -92,7 +92,7 @@ class Eda:
                 pandas DataFrame: El DataFrame original con las columnas categóricas codificadas mediante
                 el método OneHotEncoding, excluyendo la columna objetivo.
             """
-            # Crear el codificador OneHotEncoder con la opción 'drop' establecida en 'first'
+            # Crear el codificador OneHotEncoder con la opción 'drop' establecida en 'first' \
             # para evitar la trampa de la codificación (colinealidad).
             encoder = OneHotEncoder(sparse_output=False, drop='first')
             # Obtener las columnas categóricas a codificar automáticamente en función de su tipo de datos 'object'
@@ -103,6 +103,9 @@ class Eda:
             X_encoded.columns = encoder.get_feature_names_out(object_columns)
             # Descartar las columnas categóricas originales del DataFrame 'X'
             X = X.drop(object_columns, axis=1).reset_index(drop=True)
+            # Restablecer el índice de X y X_encode para que comience desde 1 en lugar de 0
+            X.index = y.index # SOLUCION PROVISORIA #
+            X_encoded.index = y.index # SOLUCION PROVISORIA #
             # Unir el DataFrame imputado con las columnas categóricas codificadas al DataFrame 'Xy'
             df_codificado = pd.concat([X, X_encoded, y], axis=1)
         elif metodo == "label":
@@ -138,7 +141,6 @@ class Eda:
         aux = df.drop(columns=columns_to_drop)
         return aux
 
-    
     @classmethod
     def imputar_faltantes(cls, df, metodo="mm", n_neighbors=5):
         """
@@ -214,7 +216,7 @@ class Eda:
         return shuffled_df
     
     @classmethod
-    def estandarizar_variables(cls, df, metodo="zscore"):
+    def estandarizar_variables(cls, df, target:str, metodo="zscore"):
         """
         Estandariza las variables numéricas en un DataFrame utilizando el método especificado.
         Parámetros:
@@ -227,7 +229,8 @@ class Eda:
         Retorna:
             pandas DataFrame: El DataFrame original con las variables numéricas estandarizadas.
         """
-        aux = df.copy(deep=True)
+        y= df[target]
+        aux = df.drop(target, axis=1)
         if metodo == 'zscore':
             scaler = StandardScaler()
         elif metodo == 'minmax':
@@ -236,7 +239,8 @@ class Eda:
             scaler = RobustScaler()
         else:
             raise ValueError("El parámetro 'metodo' debe ser uno de: 'zscore', 'minmax', 'robust'.")
-        aux[df.select_dtypes(include='number').columns] = scaler.fit_transform(df.select_dtypes(include='number'))
+        aux[aux.select_dtypes(include='number').columns] = scaler.fit_transform(aux.select_dtypes(include='number'))
+        aux = pd.concat([aux, y], axis=1)
         return aux
     
     @classmethod

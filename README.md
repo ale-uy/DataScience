@@ -45,8 +45,6 @@ La clase `ml_vx.ML` es una herramienta poderosa para realizar modelados y visual
 
 3. `modelo_catboost(...)`: Utiliza CatBoost para predecir la variable objetivo en un DataFrame. Al igual que los métodos anteriores, puede manejar problemas de clasificación y regresión.
 
-4. `modelo_adaboost(...)`: Utiliza AdaBoost para predecir la variable objetivo en un DataFrame. Este método también admite problemas de clasificación y regresión.
-
 #### Evaluación de Modelos
 
 5. **Metricas de Clasificación**: Calcula varias métricas de evaluación para un problema de clasificación, como *precisión*, *recall*, *F1-score* y área bajo la curva ROC (*AUC-ROC*).
@@ -59,13 +57,13 @@ La clase `ml_vx.ML` es una herramienta poderosa para realizar modelados y visual
 
 ### Instalación
 
-Para utilizar las clases `ML`, `EDA`, `Graph`, `Tools`, simplemente importa la clase en tu código:
+Para utilizar las clases `ML`, `EDA`, `Graph`, `Tools`, simplemente importa la clase en tu código (copia la carpeta vx en el directorio en que estes trabajando):
 
 ```python
-from ml_vx import ML, Tools
-from eda_vx import EDA, Graph
+from vx.ml_vx import ML, Tools
+from vx.eda_vx import EDA, Graph
 ```
-Recuerda asegurarte de tener las librerías necesarias instaladas en tu entorno (En anaconda solo necesitaras instalar *Lightgbm*, *Xgboost* y *Catboost*). Puedes instalar las librerías requeridas utilizando el siguiente comando:
+Recuerda asegurarte de tener las librerías necesarias instaladas en tu entorno (En anaconda solo necesitaras instalar *Lightgbm*, *Xgboost* y *Catboost*). Puedes instalar las librerías requeridas utilizando el siguiente comando en command-line (cmd, windows):
 
 ```bash
 pip install -r requirements.txt
@@ -76,8 +74,8 @@ Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un
 
 ```python
 # Importar la clase ML
-from ml_vx import ML
-from eda_vx import EDA
+from vx.ml_vx import ML
+from vx.eda_vx import EDA
 
 # Cargar los datos en un DataFrame
 data = pd.read_csv(...)  # Tu DataFrame con los datos
