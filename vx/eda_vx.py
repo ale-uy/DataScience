@@ -22,7 +22,28 @@ from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, Rob
 class Eda:
 
     @classmethod
-    def analizar_nulos(cls, df)->None:
+    def eliminar_duplicados(cls, df:pd.DataFrame, cols:list) -> pd.DataFrame:
+        """
+        Elimina observaciones duplicadas de un DataFrame.
+
+        :param df: pandas DataFrame
+            El DataFrame del cual se eliminarán las observaciones duplicadas.
+        :param cols: list
+            Lista de nombres de columnas para considerar al buscar duplicados.
+            Si está vacía, se considerarán todas las columnas.
+
+        :return: pandas DataFrame
+            Un nuevo DataFrame sin las observaciones duplicadas.
+        """
+        if len(cols) == 0:
+            out = df.drop_duplicates()
+        else:
+            out = df.drop_duplicates(subset=cols)
+        return out
+
+
+    @classmethod
+    def analizar_nulos(cls, df:pd.DataFrame)->None:
         """
         Devuelve el porcentaje de valores nulos en el total de datos para cada columna.
         Devuelve:
@@ -32,7 +53,7 @@ class Eda:
         print(df.isna().sum().sort_values(ascending=False) / df.shape[0] * 100)
 
     @classmethod
-    def estadisticos_numericos(cls, df)->None:
+    def estadisticos_numericos(cls, df:pd.DataFrame)->None:
         """
         Genera datos estadísticos de las variables numéricas en el DataFrame.
         Returns:
@@ -42,7 +63,7 @@ class Eda:
         print(df.select_dtypes('number').describe().T)
 
     @classmethod
-    def convertir_a_numericas(cls, df, target:str=None, metodo="ohe", drop_first=True):
+    def convertir_a_numericas(cls, df, target:str, metodo="ohe", drop_first=True)->pd.DataFrame:
         """
         Realiza la codificación de variables categóricas utilizando diferentes métodos.
         Parámetros:
@@ -129,7 +150,7 @@ class Eda:
         return df_codificado
         
     @classmethod
-    def eliminar_nulos_si(cls, df, p=0.5):
+    def eliminar_nulos_si(cls, df:pd.DataFrame, p=0.5)->pd.DataFrame:
         """
         Elimina las columnas que tienen un porcentaje mayor o igual a p de valores nulos.
         Parameters:
@@ -142,7 +163,7 @@ class Eda:
         return aux
 
     @classmethod
-    def imputar_faltantes(cls, df, metodo="mm", n_neighbors=5):
+    def imputar_faltantes(cls, df:pd.DataFrame, metodo="mm", n_neighbors=5)->pd.DataFrame:
         """
         Imputa los valores faltantes en un DataFrame utilizando diferentes métodos.
         Parámetros:
@@ -195,7 +216,7 @@ class Eda:
         return df_imputed
         
     @classmethod
-    def eliminar_unitarios(cls, df):
+    def eliminar_unitarios(cls, df:pd.DataFrame)->pd.DataFrame:
         """
         Elimina las variables que tienen un solo valor.
         """
@@ -204,7 +225,7 @@ class Eda:
         return df_copy
     
     @classmethod
-    def mezclar_datos(cls, df):
+    def mezclar_datos(cls, df:pd.DataFrame)->pd.DataFrame:
         """
         Mezcla los datos en el DataFrame de forma aleatoria.
         Parámetros:
@@ -216,7 +237,7 @@ class Eda:
         return shuffled_df
     
     @classmethod
-    def estandarizar_variables(cls, df, target:str, metodo="zscore"):
+    def estandarizar_variables(cls, df:pd.DataFrame, target:str, metodo="zscore")->pd.DataFrame:
         """
         Estandariza las variables numéricas en un DataFrame utilizando el método especificado.
         Parámetros:
@@ -244,7 +265,7 @@ class Eda:
         return aux
     
     @classmethod
-    def balancear_datos(cls, df, target:str):
+    def balancear_datos(cls, df:pd.DataFrame, target:str)->pd.DataFrame:
         """
         Equilibra un conjunto de datos desequilibrado en una tarea 
         de clasificación mediante el método de sobre muestreo.
@@ -273,9 +294,10 @@ class Eda:
         return df_balanced
     
     @classmethod
-    def all_eda(cls,df,
-                target:str,
-                p=0.5,
+    def all_eda(cls,df:pd.DataFrame,
+                target:str, p=0.5,
+                duplicados=False,
+                lista_duplicados=[],
                 imputar=True,
                 metodo_imputar="mm",
                 n_neighbors=5,
@@ -284,7 +306,7 @@ class Eda:
                 estandarizar=False,
                 metodo_estandarizar="zscore",
                 balancear=False,
-                mezclar=False):
+                mezclar=False)->pd.DataFrame:
         """
         Realiza un Análisis Exploratorio de Datos (EDA) completo en un DataFrame dado.
         Parámetros:
@@ -319,6 +341,8 @@ class Eda:
         """
         df_limpio = cls.eliminar_unitarios(df)
         df_limpio = cls.eliminar_nulos_si(df_limpio,p)
+        if duplicados:
+            df_limpio = cls.eliminar_duplicados(df_limpio,lista_duplicados)
         if imputar:
             df_limpio = cls.imputar_faltantes(df_limpio,metodo_imputar,n_neighbors)
         if convertir:
@@ -334,7 +358,7 @@ class Eda:
 class Graph:
 
     @classmethod
-    def graficos_categoricos(cls, df)->None:
+    def graficos_categoricos(cls, df:pd.DataFrame)->None:
         """
         Crea gráficos de barras horizontales para cada variable categórica en el DataFrame.
         Parámetros:
@@ -358,7 +382,7 @@ class Graph:
         plt.show()
 
     @classmethod
-    def plot_histogram(cls, df, column:str)->None:
+    def plot_histogram(cls, df:pd.DataFrame, column:str)->None:
         """
         Genera un histograma interactivo para una columna específica del DataFrame.
         Parameters:
@@ -368,7 +392,7 @@ class Graph:
         fig.show()
 
     @classmethod
-    def plot_boxplot(cls, df, x:str, y:str)->None:
+    def plot_boxplot(cls, df:pd.DataFrame, x:str, y:str)->None:
         """
         Genera un gráfico de caja interactivo para una variable y en función de otra variable x.
         Parameters:
@@ -379,7 +403,7 @@ class Graph:
         fig.show()
 
     @classmethod
-    def plot_scatter(cls, df, x:str, y:str)->None:
+    def plot_scatter(cls, df:pd.DataFrame, x:str, y:str)->None:
         """
         Genera un gráfico de dispersión interactivo para dos variables x e y.
         Parameters:
