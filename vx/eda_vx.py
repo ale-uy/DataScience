@@ -22,7 +22,7 @@ from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, Rob
 class Eda:
 
     @classmethod
-    def eliminar_duplicados(cls, df:pd.DataFrame, cols:list) -> pd.DataFrame:
+    def eliminar_duplicados(cls, df:pd.DataFrame, cols=[]) -> pd.DataFrame:
         """
         Elimina observaciones duplicadas de un DataFrame.
 
