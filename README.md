@@ -100,7 +100,7 @@ model_filename = "nombre_del_archivo.pkl"
 loaded_model = joblib.load(model_filename)
 # Ahora puedes utilizar el modelo cargado para hacer predicciones
 # Supongamos que tienes un conjunto de datos 'X_test' para hacer predicciones
-y_pred = loaded_model.predict(nuevo_conjunto_de_datos)
+y_pred = loaded_model.predict(X_test)
 ```
 ## Contribución
 Si encuentras algún problema o tienes ideas para mejorar estas clases, ¡no dudes en contribuir! Puedes hacerlo enviando pull requests o abriendo issues en el repositorio del proyecto.
