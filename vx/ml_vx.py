@@ -2,7 +2,7 @@
 """
 Autor: ale-uy
 Fecha: 31 Julio 2023
-Actualizado: 7 Agosto 2023
+Actualizado: 13 Agosto 2023
 Version: v2
 Archivo: ml_vx.py
 Descripción: Automatizar procesos de machine learning
@@ -17,7 +17,7 @@ import xgboost as xgb
 import catboost as cb
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.model_selection import GridSearchCV, cross_val_score, train_test_split
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error, confusion_matrix, \
     precision_score, recall_score, f1_score, roc_auc_score, r2_score, mean_squared_log_error
 import joblib
@@ -33,7 +33,7 @@ class Tools:
     @classmethod
     def importancia_variables(cls, df, target:str, n_estimators=100, save_model=False, peores=0,
                               random_state=np.random.randint(1,1000), cv=5, model_filename="Random_Forest",
-                              tipo_problema:str=None, eliminar=False, umbral=0.0001)->tuple:
+                              tipo_problema=None, eliminar=False, umbral=0.0001):
         """
         Calcula la importancia de las variables en función de su contribución a la predicción, utiliza RandomForest.
 
@@ -46,7 +46,7 @@ class Tools:
             peores (int): cuantas variables desde abajo mostrar (todas por default)
             save_model (bool): True para guardar el modelo (False defecto)
             eliminar (bool): Si se debe eliminar las variables menos importantes. Por defecto es False.
-            tipo_problema (str): clasificacion o regresion (None por defecto)
+            tipo_problema (str): 'clasificacion' o 'regresion' (None por defecto)
             umbral (float): Valor umbral que determina la importancia mínima requerida para mantener una variable.
                             Por defecto es 0.005.
 
@@ -237,6 +237,41 @@ class Tools:
         }
 
         return result
+    
+    @classmethod
+    def busqueda_rejilla_aleatoria(cls, model, param_dist, X_train, y_train, scoring='accuracy', cv=5, n_iter=10):
+        """
+        Realiza una búsqueda de hiperparámetros utilizando RandomizedSearchCV.
+
+        Parámetros:
+            model: El estimador del modelo que deseas ajustar.
+            param_dist: Un diccionario con los hiperparámetros y sus distribuciones para muestreo.
+            X_train: Conjunto de entrenamiento de características.
+            y_train: Etiquetas del conjunto de entrenamiento.
+            scoring: La métrica de evaluación. Por defecto es 'accuracy'.
+            cv: Número de particiones para validación cruzada. Por defecto es 5.
+            n_iter: Número de combinaciones de hiperparámetros a probar. Por defecto es 10.
+
+        Retorna:
+            dict: Un diccionario que contiene los mejores hiperparámetros encontrados y el mejor puntaje.
+        """
+        random_search = RandomizedSearchCV(
+            estimator=model, 
+            param_distributions=param_dist, 
+            scoring=scoring, cv=cv, 
+            n_iter=n_iter)
+        random_search.fit(X_train, y_train)
+
+        best_params = random_search.best_params_
+        best_score = random_search.best_score_
+
+        result = {
+            'best_params': best_params,
+            'best_score': best_score
+        }
+
+        return result
+
 
 class Graphs:
 
@@ -310,13 +345,14 @@ class Graphs:
 
         fig.show()
 
+
 class ML:
 
     @classmethod
     def modelo_lightgbm(cls, df, target:str, tipo_problema:str, random_state=np.random.randint(1,1000),
-                        num_leaves=20, num_boost_round=100, graficar=False, test_size=0.2, cv=3,
+                        num_leaves=20, num_boost_round=100, graficar=False, test_size=0.2, cv=5,
                         learning_rate=0.1, max_depth=-1, save_model=False, model_filename='lightgbm', 
-                        encode_categorical=False, grid=False, boosting_type='gbdt'):
+                        encode_categorical=False, grid=False, boosting_type='gbdt', n_iter=10):
         """
         Utiliza LightGBM para predecir la variable objetivo en un DataFrame.
 
@@ -373,11 +409,12 @@ class ML:
             estimator = lgb.LGBMClassifier() if tipo_problema=='clasificacion' else lgb.LGBMRegressor()
             scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
             # Realizar búsqueda de rejilla utilizando el método de Tools
-            best_params = Tools.busqueda_rejilla(estimator, 
+            best_params = Tools.busqueda_rejilla_aleatoria(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
-                                            cv=cv)
+                                            cv=cv,
+                                            n_iter=n_iter)
             # Mostramos los valores seleccionados por GridSearch
             print(pd.DataFrame(best_params))
             # Utilizar los mejores hiperparámetros encontrados
@@ -438,7 +475,7 @@ class ML:
     def modelo_xgboost(cls, df, target:str, tipo_problema:str, test_size=0.2, cv=5,
                 n_estimators=100, save_model=False, model_filename='xgboost',
                 learning_rate=0.1, max_depth=3, random_state=np.random.randint(1, 1000),
-                graficar=False,grid=False):
+                graficar=False, grid=False, n_iter=10):
         """
         Utiliza XGBoost para predecir la variable objetivo en un DataFrame.
 
@@ -490,11 +527,12 @@ class ML:
             estimator = xgb.XGBClassifier() if tipo_problema=='clasificacion' else xgb.XGBRegressor()
             scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
             # Realizar búsqueda de rejilla utilizando el método de Tools
-            best_params = Tools.busqueda_rejilla(estimator, 
+            best_params = Tools.busqueda_rejilla_aleatoria(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
-                                            cv=cv)
+                                            cv=cv,
+                                            n_iter=n_iter)
             # Mostramos los valores seleccionados por GridSearch
             print(pd.DataFrame(best_params))
             # Utilizar los mejores hiperparámetros encontrados
@@ -547,7 +585,7 @@ class ML:
         return metrics
     
     @classmethod
-    def modelo_catboost(cls, df, target:str, tipo_problema:str, test_size=0.2,
+    def modelo_catboost(cls, df, target:str, tipo_problema:str, test_size=0.2, n_iter=10,
                         num_boost_round=100, learning_rate=0.1, max_depth=3, cv=3,
                         random_state=np.random.randint(1, 1000), graficar=False,
                         save_model=False, model_filename='catboost', grid=False):
@@ -595,11 +633,12 @@ class ML:
             estimator = cb.CatBoostClassifier() if tipo_problema=='clasificacion' else cb.CatBoostRegressor()
             scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
             # Realizar búsqueda de rejilla utilizando el método de Tools
-            best_params = Tools.busqueda_rejilla(estimator, 
+            best_params = Tools.busqueda_rejilla_aleatoria(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
-                                            cv=cv)
+                                            cv=cv,
+                                            n_iter=n_iter)
             # Mostramos los valores seleccionados por GridSearch
             print(pd.DataFrame(best_params))
             # Utilizar los mejores hiperparámetros encontrados
