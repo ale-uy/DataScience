@@ -2,7 +2,7 @@
 """
 Autor: ale-uy
 Fecha: 31 Julio 2023
-Actualizado: 21 Agosto 2023
+Actualizado: 7 Agosto 2023
 Version: v2
 Archivo: ml_vx.py
 Descripción: Automatizar procesos de machine learning
@@ -99,7 +99,7 @@ class Tools:
             print(f'{importancia_df[-peores:]}')
         
     @classmethod
-    def dividir_y_convertir_datos(cls, df, target:str, test_size=0.2, 
+    def _dividir_y_convertir_datos(cls, df, target:str, test_size=0.2, 
                       random_state=np.random.randint(1, 1000), 
                       encode_categorical=False)->tuple:
         """
@@ -139,7 +139,7 @@ class Tools:
         return X_train, X_test, y_train, y_test
     
     @classmethod
-    def metricas(cls, y_test, y_pred, tipo_metricas=None):
+    def _metricas(cls, y_test, y_pred, tipo_metricas=None):
         """
         Calcula las métricas adecuadas en función del tipo de valores en y_test y y_pred.
 
@@ -212,7 +212,7 @@ class Tools:
         return metric_df
 
     @classmethod
-    def busqueda_rejilla(cls, model, param_grid, X_train, y_train, scoring='accuracy', cv=5):
+    def _busqueda_rejilla(cls, model, param_grid, X_train, y_train, scoring='accuracy', cv=5):
         """
         Realiza una búsqueda de hiperparámetros utilizando GridSearchCV.
 
@@ -241,7 +241,7 @@ class Tools:
         return result
     
     @classmethod
-    def busqueda_rejilla_aleatoria(cls, model, param_dist, X_train, y_train, scoring='accuracy', cv=5, n_iter=10):
+    def _busqueda_rejilla_aleatoria(cls, model, param_dist, X_train, y_train, scoring='accuracy', cv=5, n_iter=10):
         """
         Realiza una búsqueda de hiperparámetros utilizando RandomizedSearchCV.
 
@@ -450,7 +450,7 @@ class Graphs:
         plt.show()
 
 
-class ML:
+class ML(Tools):
 
     @classmethod
     def modelo_lightgbm(cls, df, target:str, tipo_problema:str, random_state=np.random.randint(1,1000),
@@ -496,7 +496,7 @@ class ML:
         """
         
         # Dividimos los datos en conjuntos de entrenamiento y prueba
-        X_train, X_test, y_train, y_test = Tools.dividir_y_convertir_datos(df, target,
+        X_train, X_test, y_train, y_test = cls._dividir_y_convertir_datos(df, target,
                                                                            test_size=test_size,
                                                                            random_state=random_state,
                                                                            encode_categorical=encode_categorical)
@@ -513,7 +513,7 @@ class ML:
             estimator = lgb.LGBMClassifier() if tipo_problema=='clasificacion' else lgb.LGBMRegressor()
             scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
             # Realizar búsqueda de rejilla utilizando el método de Tools
-            best_params = Tools.busqueda_rejilla_aleatoria(estimator, 
+            best_params = cls._busqueda_rejilla_aleatoria(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
@@ -562,7 +562,7 @@ class ML:
         y_pred = lgb_model.predict(X_test)
         
         # Calculamos las métricas de clasificación
-        metrics = Tools.metricas(y_test, y_pred, tipo_metricas=tipo_metricas)
+        metrics = cls._metricas(y_test, y_pred, tipo_metricas=tipo_metricas)
         
         if graficar and tipo_problema == 'clasificacion':
             Graphs.plot_clasificacion(y_test, y_pred)
@@ -613,7 +613,7 @@ class ML:
         """
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
-        X_train, X_test, y_train, y_test = Tools.dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
+        X_train, X_test, y_train, y_test = cls._dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
         # Creamos el objeto DMatrix de XGBoost
         #dtrain = xgb.DMatrix(X_train, label=y_train)
         #dtest = xgb.DMatrix(X_test, label=y_test)
@@ -631,7 +631,7 @@ class ML:
             estimator = xgb.XGBClassifier() if tipo_problema=='clasificacion' else xgb.XGBRegressor()
             scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
             # Realizar búsqueda de rejilla utilizando el método de Tools
-            best_params = Tools.busqueda_rejilla_aleatoria(estimator, 
+            best_params = cls._busqueda_rejilla_aleatoria(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
@@ -663,7 +663,7 @@ class ML:
                 y_pred_binary = np.where(y_pred > 0.5, 1, 0)
             else:
                 y_pred_binary = np.argmax(y_pred, axis=1)
-            metrics = Tools.metricas(y_test,y_pred_binary,tipo_metricas='clas')
+            metrics = cls._metricas(y_test,y_pred_binary,tipo_metricas='clas')
             if graficar == True:
                 Graphs.plot_clasificacion(y_test, y_pred_binary)
 
@@ -677,7 +677,7 @@ class ML:
             
             # Realizamos predicciones en el conjunto de prueba
             y_pred = xgb_model.predict(X_test)
-            metrics = Tools.metricas(y_test, y_pred,tipo_metricas='reg')
+            metrics = cls._metricas(y_test, y_pred,tipo_metricas='reg')
 
         else:
             raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
@@ -726,7 +726,7 @@ class ML:
         """
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
-        X_train, X_test, y_train, y_test = Tools.dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
+        X_train, X_test, y_train, y_test = cls._dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
         if grid:
             params = {
                 'learning_rate': [0.01, 0.05, 0.1, 0.3],
@@ -737,7 +737,7 @@ class ML:
             estimator = cb.CatBoostClassifier() if tipo_problema=='clasificacion' else cb.CatBoostRegressor()
             scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
             # Realizar búsqueda de rejilla utilizando el método de Tools
-            best_params = Tools.busqueda_rejilla_aleatoria(estimator, 
+            best_params = cls._busqueda_rejilla_aleatoria(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
@@ -771,9 +771,9 @@ class ML:
         y_pred = model.predict(X_test)
         # Calculamos las métricas de clasificación o regresión
         if tipo_problema == 'clasificacion':
-            metrics = Tools.metricas(y_test,y_pred,tipo_metricas='clas')
+            metrics = cls._metricas(y_test,y_pred,tipo_metricas='clas')
         else:
-            metrics = Tools.metricas(y_test,y_pred,tipo_metricas='reg')
+            metrics = cls._metricas(y_test,y_pred,tipo_metricas='reg')
 
         if graficar:
             if tipo_problema == 'clasificacion':

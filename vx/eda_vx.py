@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-from scipy.cluster.hierarchy import linkage, dendrogram
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from sklearn.utils import resample
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, RobustScaler, StandardScaler
@@ -393,9 +393,20 @@ class Graph:
         fig.show()
 
     @classmethod
-    def grafico_dendrograma(cls, df, method='single', metric='euclidean'):
+    def grafico_clusters_jerarquicos(cls, df, method='single', metric='euclidean', save_clusters=False):
+        """
+        Genera un dendrograma jerárquico a partir de un DataFrame y guarda los clusters en una serie.
+
+        :param df: DataFrame con los datos para el análisis.
+        :param num_clusters: Número de clusters deseados.
+        :param method: 'single' (defecto), 'complete', 'average', 'weighted', 'ward', 'centroid', 'median'.
+        :param metric: Métrica de distancia para el cálculo del enlace.
+        :param save_clusters: True para generar una serie con el cluster de cada observación, \
+            pedirá ingresar el numero de clusters a utilizar.
+
+        :return: Serie con los clusters generados.
+        """
         # Calcular la matriz de enlace
-        # Métodos: 'single'  (defecto), 'complete', 'average', 'weighted', 'ward', 'centroid', 'median'
         linked = linkage(df.values, method=method, metric=metric, optimal_ordering=True) 
 
         # Generar el dendrograma
@@ -406,3 +417,14 @@ class Graph:
         plt.ylabel('Distancias')
         plt.show()
 
+        if save_clusters:
+            num_clusters = int(input('Numero de clusters a utilizar (observe el dendrograma)'))
+            # Obtener los clusters usando la función fcluster
+            corte = linked[-num_clusters + 1, 2]  # Altura del corte en el dendrograma
+            clusters = fcluster(linked, corte, criterion='distance')
+
+            # Crear una serie con los clusters y devolverla
+            cluster_series = pd.Series(clusters, index=df.index, name='Clusters')
+            return cluster_series
+
+    
