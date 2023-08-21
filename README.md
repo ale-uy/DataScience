@@ -78,7 +78,7 @@ Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un
 
 ```python
 # Importar la clase ML
-from vx.ml_vx import ML
+from vx.ml_vx import ML, Tools
 from vx.eda_vx import EDA
 
 # Cargar los datos en un DataFrame
