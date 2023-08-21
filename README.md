@@ -59,6 +59,8 @@ La clase `ml_vx.ML` es una herramienta poderosa para realizar modelados y visual
 
 7. `importancia_variables(...)`: Calcula la importancia de las variables en función de su contribución a la predicción, utiliza Bosque Aleatorio (RandomForest) con validacion cruzada. Utiliza un umbral que determina la importancia mínima requerida para mantener una variable o eliminarla.
 
+8. `generar_clusters(df)`: Aplica el algoritmo no-supervisado K-Means o DBSCAN a un DataFrame y devuelve una serie con el número de cluster al que pertenece cada observación.
+
 ### Instalación
 
 Para utilizar las clases `ML`, `EDA`, `Graph`, `Tools`, simplemente importa la clase en tu código (copia la carpeta vx en el directorio en que estes trabajando):
@@ -79,13 +81,13 @@ Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un
 ```python
 # Importar la clase ML
 from vx.ml_vx import ML, Tools
-from vx.eda_vx import EDA
+from vx.eda_vx import EDA, Graph
 
 # Cargar los datos en un DataFrame
 data = pd.read_csv(...)  # Tu DataFrame con los datos
 
 # Preprocesamiento de datos
-preprocessed_data = EDA.all_eda(data, target='target', balancear=True)
+preprocessed_data = EDA.all_eda(data, target='target')
 
 # Entrenar el modelo LightGBM y obtener sus metricas
 ML.modelo_lightgbm(preprocessed_data, target='target', tipo_problema='clasificacion')
