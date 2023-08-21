@@ -393,9 +393,9 @@ class Graph:
         fig.show()
 
     @classmethod
-    def grafico_dendrograma(cls, df, method='weighted', metric='euclidean'):
+    def grafico_dendrograma(cls, df, method='single', metric='euclidean'):
         # Calcular la matriz de enlace
-        # Métodos: 'single', 'complete', 'average', 'weighted' (defecto), 'ward', 'centroid', 'median'
+        # Métodos: 'single'  (defecto), 'complete', 'average', 'weighted', 'ward', 'centroid', 'median'
         linked = linkage(df.values, method=method, metric=metric, optimal_ordering=True) 
 
         # Generar el dendrograma
