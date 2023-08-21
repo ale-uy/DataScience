@@ -2,7 +2,7 @@
 """
 Autor: ale-uy
 Fecha: 31 Julio 2023
-Actualizado: 13 Agosto 2023
+Actualizado: 21 Agosto 2023
 Version: v2
 Archivo: ml_vx.py
 Descripción: Automatizar procesos de machine learning
@@ -12,20 +12,22 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 import lightgbm as lgb
 import xgboost as xgb
 import catboost as cb
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error, confusion_matrix, \
-    precision_score, recall_score, f1_score, roc_auc_score, r2_score, mean_squared_log_error
+    precision_score, recall_score, f1_score, roc_auc_score, r2_score, mean_squared_log_error, silhouette_score
+from sklearn.cluster import KMeans, DBSCAN
+
 import joblib
 import warnings
 
 pd.set_option('display.max_colwidth', None) # Mostrar todo el ancho de las celdas en el DataFrame
-
-warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=UserWarning, message="KMeans is known to have a memory leak on Windows with MKL")
 
 
 class Tools:
@@ -272,6 +274,53 @@ class Tools:
 
         return result
 
+    @classmethod
+    def generar_clusters(cls, df, k=5, eps=0.5, min_samples=5, dbscan=False, grafico=False, random_state=np.random.randint(1,1000)):
+        """
+        Aplica el algoritmo K-Means o DBSCAN a un DataFrame y devuelve una serie \
+            con el número de cluster al que pertenece cada observación.
+        
+        :param df: DataFrame con los datos para el análisis.
+        :param k: Número de clusters a generar. 5 por defecto (recomendable usar Graphs.plot_cluster(df))
+        :param eps: Determina el radio de búsqueda alrededor de cada punto en el espacio de características.
+        :param min_samples: Especifica el número mínimo de puntos dentro del radio eps \
+            para que un punto sea considerado núcleo.
+        :param algorithm: Algoritmo de clustering a utilizar ('kmeans' o 'dbscan').
+        :param grafico: Si True, genera un gráfico de los clusters.
+        :param random_state (opt): Semilla a utilizar, aleatoria por defec
+        to.
+
+        :return: Serie con los números de cluster.
+        """
+        # Escalar los datos
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(df)
+        
+        if dbscan:
+            # Aplicar DBSCAN clustering
+            name = 'DBSCAN'
+            dbscan = DBSCAN(eps=eps, min_samples=min_samples)
+            labels = dbscan.fit_predict(scaled_data)
+
+        else:
+            # Aplicar K-Means clustering
+            name = 'K-MEANS'
+            kmeans = KMeans(n_clusters=k, random_state=random_state)
+            labels = kmeans.fit_predict(scaled_data)
+        
+        # Generar el gráfico si se solicita
+        if grafico:
+            plt.scatter(df.iloc[:, 0], df.iloc[:, 1], c=labels, cmap='viridis')
+            plt.title(f'Clustering con {name}')
+            plt.xlabel('Feature 1')
+            plt.ylabel('Feature 2')
+            plt.show()
+
+        # Crear una serie con los números de cluster
+        cluster_series = pd.Series(labels, name='Clusters', index=df.index)
+
+        return cluster_series
+
 
 class Graphs:
 
@@ -344,6 +393,61 @@ class Graphs:
                                  name='Línea de 45°'))
 
         fig.show()
+
+    @classmethod
+    def plot_cluster(cls, df, random_state=np.random.randint(1,1000)):
+        """
+        Realiza el análisis de clustering utilizando el Método del Codo y el Puntaje de Silueta.
+        
+        :param df: DataFrame que contiene los datos para el análisis.
+        :param random_state (opcional): valor de la semilla a utilizar.
+
+        Ejemplo de uso: 
+            Graphs.plot_cluster(df). El df debe estar limpio (sin faltantes ni variuables categoricas).
+        
+        """
+        # Escalar los datos
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(df)
+
+        # Método del codo (Elbow Method)
+        def elbow_method(data, max_clusters):
+            distortions = []
+            for i in range(1, max_clusters + 1):
+                kmeans = KMeans(n_clusters=i, random_state=random_state, n_init=10)
+                kmeans.fit(data)
+                distortions.append(kmeans.inertia_)
+            return distortions
+
+        max_clusters = 10
+        distortions = elbow_method(scaled_data, max_clusters)
+
+        # Encontrar el número óptimo de clusters usando silhouette score
+        silhouette_scores = []
+        for i in range(2, max_clusters + 1):
+            kmeans = KMeans(n_clusters=i, random_state=42, n_init=10)
+            labels = kmeans.fit_predict(scaled_data)
+            silhouette_avg = silhouette_score(scaled_data, labels)
+            silhouette_scores.append(silhouette_avg)
+
+        # Crear una figura con dos subplots en forma vertical
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 12))
+
+        # Graficar el codo en el primer subplot
+        ax1.plot(range(1, max_clusters + 1), distortions, marker='o')
+        ax1.set_title('Método del Codo (Elbow Method)')
+        ax1.set_xlabel('Numbero de Clusters')
+        ax1.set_ylabel('Distorción')
+
+        # Graficar silhouette scores en el segundo subplot
+        ax2.plot(range(2, max_clusters + 1), silhouette_scores, marker='o')
+        ax2.set_title('Puntaje de Silueta (Silhouette Score")')
+        ax2.set_xlabel('Número de Clusters')
+        ax2.set_ylabel('Puntaje de Silueta')
+
+        # Ajustar los espacios entre los subplots
+        plt.tight_layout()
+        plt.show()
 
 
 class ML:
