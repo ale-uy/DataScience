@@ -34,6 +34,8 @@ Las clases `eda_vx.EDA` y `eda_vx.Graph` son una herramienta poderosa para reali
 
 13. `grafico_dispersion(df, x, y)`: Genera un gráfico de dispersión interactivo para dos variables x e y.
 
+14. `grafico_dendrograma(df)`: Genera un dendrograma que es útil para determinar el valor de k (grupos) para usar con la imputacion knn.
+
 ## Modulo ml_vx.py: Modelado de Datos
 
 La clase `ml_vx.ML` es una herramienta poderosa para realizar modelados y visualizacion de datos de manera sencilla y eficiente. Esta clase están diseñadas para facilitar diversas tareas relacionadas con el procesamiento, entrenamiento y evaluación de modelos de aprendizaje automático.

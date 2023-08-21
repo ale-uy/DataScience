@@ -6,3 +6,4 @@ matplotlib
 lightgbm
 xgboost
 catboost
+scipy
