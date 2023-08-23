@@ -61,12 +61,16 @@ La clase `ml_vx.ML` es una herramienta poderosa para realizar modelados y visual
 
 8. `generar_clusters(df)`: Aplica el algoritmo no-supervisado K-Means o DBSCAN a un DataFrame y devuelve una serie con el número de cluster al que pertenece cada observación.
 
+9. `generar_soft_clusters(df)`: Aplica Gaussian Mixture Models (GMM) al dataframe para generar una tabla con las probabilidades de pertencia de cada observacion al cluster especifico.
+
+10. `Graphs.plot_cluster(df)`: Gráfico de codo y silueta que es escencial para determinar el número de clusters óptimo a utilizar en los métodos de clusters anteriores.
+
 ### Instalación
 
-Para utilizar las clases `ML`, `EDA`, `Graph`, `Tools`, simplemente importa la clase en tu código (copia la carpeta vx en el directorio en que estes trabajando):
+Para utilizar las clases `ML`, `EDA`, `Graph`, `Graphs`, `Tools`, simplemente importa la clase en tu código (copia la carpeta vx en el directorio en que estes trabajando):
 
 ```python
-from vx.ml_vx import ML, Tools
+from vx.ml_vx import ML, Tools, Graphs
 from vx.eda_vx import EDA, Graph
 ```
 Recuerda asegurarte de tener las librerías necesarias instaladas en tu entorno (En anaconda solo necesitaras instalar *Lightgbm*, *Xgboost* y *Catboost*). Puedes instalar las librerías requeridas utilizando el siguiente comando en command-line (cmd, windows):

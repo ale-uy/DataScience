@@ -2,7 +2,7 @@
 """
 Autor: ale-uy
 Fecha: 31 Julio 2023
-Actualizado: 7 Agosto 2023
+Actualizado: 23 Agosto 2023
 Version: v2
 Archivo: ml_vx.py
 Descripción: Automatizar procesos de machine learning
@@ -14,6 +14,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import lightgbm as lgb
+from sklearn.mixture import GaussianMixture
 import xgboost as xgb
 import catboost as cb
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -241,7 +242,7 @@ class Tools:
         return result
     
     @classmethod
-    def _busqueda_rejilla_aleatoria(cls, model, param_dist, X_train, y_train, scoring='accuracy', cv=5, n_iter=10):
+    def _busqueda_aleatoria(cls, model, param_dist, X_train, y_train, scoring='accuracy', cv=5, n_iter=10):
         """
         Realiza una búsqueda de hiperparámetros utilizando RandomizedSearchCV.
 
@@ -320,6 +321,42 @@ class Tools:
         cluster_series = pd.Series(labels, name='Clusters', index=df.index)
 
         return cluster_series
+
+    @classmethod
+    def generar_soft_clusters(cls, df, num_clusters=5, grafico=False, random_state=np.random.randint(1, 1000)):
+        """
+        Aplica Gaussian Mixture Models (GMM) a un DataFrame y devuelve las probabilidades de pertenencia \
+            a cada uno de los clusters.
+
+        :param df: DataFrame con los datos para el análisis.
+        :param num_clusters: Número de clusters a generar.
+        :param grafico: Si True, genera un gráfico de los clusters.
+        :param random_state (opt): Semilla a utilizar, aleatoria por defecto.
+
+        :return: DataFrame con las probabilidades de pertenencia a cada cluster.
+        """
+        # Escalar los datos
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(df)
+
+        # Aplicar Gaussian Mixture Models
+        gmm = GaussianMixture(n_components=num_clusters, random_state=random_state)
+        gmm.fit(scaled_data)
+        probabilities = gmm.predict_proba(scaled_data)
+
+        # Generar el gráfico si se solicita
+        if grafico:
+            plt.scatter(df.iloc[:, 0], df.iloc[:, 1], c=probabilities, cmap='viridis')
+            plt.title('Soft Clustering con Gaussian Mixture Models')
+            plt.xlabel('Feature 1')
+            plt.ylabel('Feature 2')
+            plt.colorbar()
+            plt.show()
+
+        # Crear un DataFrame con las probabilidades de pertenencia a cada cluster
+        cluster_probabilities = pd.DataFrame(probabilities, columns=[f'Cluster_{i}' for i in range(num_clusters)], index=df.index)
+
+        return cluster_probabilities
 
 
 class Graphs:
@@ -513,7 +550,7 @@ class ML(Tools):
             estimator = lgb.LGBMClassifier() if tipo_problema=='clasificacion' else lgb.LGBMRegressor()
             scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
             # Realizar búsqueda de rejilla utilizando el método de Tools
-            best_params = cls._busqueda_rejilla_aleatoria(estimator, 
+            best_params = cls._busqueda_aleatoria(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
@@ -631,7 +668,7 @@ class ML(Tools):
             estimator = xgb.XGBClassifier() if tipo_problema=='clasificacion' else xgb.XGBRegressor()
             scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
             # Realizar búsqueda de rejilla utilizando el método de Tools
-            best_params = cls._busqueda_rejilla_aleatoria(estimator, 
+            best_params = cls._busqueda_aleatoria(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
@@ -737,7 +774,7 @@ class ML(Tools):
             estimator = cb.CatBoostClassifier() if tipo_problema=='clasificacion' else cb.CatBoostRegressor()
             scoring = 'neg_log_loss' if tipo_problema=='clasificacion' else 'neg_mean_squared_error'
             # Realizar búsqueda de rejilla utilizando el método de Tools
-            best_params = cls._busqueda_rejilla_aleatoria(estimator, 
+            best_params = cls._busqueda_aleatoria(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
@@ -786,3 +823,4 @@ class ML(Tools):
             joblib.dump(model, f'{model_filename}.pkl')
 
         return metrics
+    
