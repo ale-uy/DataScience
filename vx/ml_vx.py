@@ -320,7 +320,7 @@ class Tools:
         return cluster_series
 
     @classmethod
-    def generar_soft_clusters(cls, df, num_clusters=5, grafico=False, random_state=np.random.randint(1, 1000)):
+    def generar_soft_clusters(cls, df, num_clusters=5, grafico=False, random_state=np.random.randint(1, 1000), n_init=10):
         """
         Aplica Gaussian Mixture Models (GMM) a un DataFrame y devuelve las probabilidades de pertenencia \
             a cada uno de los clusters.
@@ -329,6 +329,8 @@ class Tools:
         :param num_clusters: Número de clusters a generar.
         :param grafico: Si True, genera un gráfico de los clusters.
         :param random_state (opt): Semilla a utilizar, aleatoria por defecto.
+        :param n_init (opt): número de veces que el algoritmo EM (Expectation-Maximization) \
+            intentará converger a un resultado óptimo, 10 por defecto.
 
         :return: DataFrame con las probabilidades de pertenencia a cada cluster.
         
@@ -337,7 +339,7 @@ class Tools:
 
 
         # Aplicar Gaussian Mixture Models
-        gmm = GaussianMixture(n_components=num_clusters, random_state=random_state)
+        gmm = GaussianMixture(n_components=num_clusters, random_state=random_state, n_init=n_init)
         gmm.fit(df)
         probabilities = gmm.predict_proba(df)
 
@@ -437,11 +439,9 @@ class Graphs:
 
         Ejemplo de uso: 
             Graphs.plot_cluster(df). El df debe estar limpio (sin faltantes ni variuables categoricas).
-        
+
+        Nota: Usar datos escalados para mejor resultado
         """
-        # Escalar los datos
-        scaler = StandardScaler()
-        scaled_data = scaler.fit_transform(df)
 
         # Método del codo (Elbow Method)
         def elbow_method(data, max_clusters):
@@ -453,14 +453,14 @@ class Graphs:
             return distortions
 
         max_clusters = 10
-        distortions = elbow_method(scaled_data, max_clusters)
+        distortions = elbow_method(df, max_clusters)
 
         # Encontrar el número óptimo de clusters usando silhouette score
         silhouette_scores = []
         for i in range(2, max_clusters + 1):
             kmeans = KMeans(n_clusters=i, random_state=42, n_init=10)
-            labels = kmeans.fit_predict(scaled_data)
-            silhouette_avg = silhouette_score(scaled_data, labels)
+            labels = kmeans.fit_predict(df)
+            silhouette_avg = silhouette_score(df, labels)
             silhouette_scores.append(silhouette_avg)
 
         # Crear una figura con dos subplots en forma vertical
