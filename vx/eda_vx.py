@@ -2,7 +2,7 @@
 """
 Autor: ale-uy
 Fecha: 2 Mayo 2023
-Actualizado: 21 Agosto 2023
+Actualizado: 23 Agosto 2023
 Version: v2
 Archivo: eda_vx.py
 Descripción: Automatizar procesos de analisis y limpieza dn datos
@@ -16,6 +16,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.utils import resample
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, RobustScaler, StandardScaler
@@ -144,7 +145,7 @@ class Eda:
         return aux
 
     @classmethod
-    def imputar_faltantes(cls, df, metodo="mm", n_neighbors=5):
+    def imputar_faltantes(cls, df, metodo="mm", n_neighbors=None):
         """
         Imputa los valores faltantes en un DataFrame utilizando diferentes métodos.
         Parámetros:
@@ -178,19 +179,20 @@ class Eda:
                     median = df_imputed[col].median()
                     df_imputed[col].fillna(median, inplace=True)
         elif metodo == "knn":
-            """
-            Imputa los valores faltantes en un DataFrame utilizando KNNImputer.
-            Parámetros:
-            df (pandas DataFrame): El DataFrame que contiene los valores faltantes.
-            n_neighbors (int): El número de vecinos más cercanos a utilizar en KNNImputer.
-            Retorna:
-            pandas DataFrame: El DataFrame original con los valores faltantes imputados.
-            """
-            # Crear un objeto KNNImputer con el número de vecinos (n_neighbors) especificado
-            knn_imputer = KNNImputer(n_neighbors=n_neighbors)
-            # Imputar los valores faltantes utilizando KNNImputer
+            if n_neighbors is None:
+                # Realizar búsqueda de validación cruzada para encontrar el mejor valor de n_neighbors
+                param_grid = {'n_neighbors': [i for i in range(3,16)]}  # Valores de n_neighbors a probar
+                knn_imputer = KNNImputer()
+                grid_search = RandomizedSearchCV(knn_imputer, param_grid, cv=3, n_iter=6)
+                grid_search.fit(df)
+                n_neighbors_best = grid_search.best_params_['n_neighbors']
+                print(f"Mejor valor de n_neighbors encontrado: {n_neighbors_best}")
+            else:
+                n_neighbors_best = n_neighbors
+            
+            # Imputar los valores faltantes utilizando KNNImputer con el mejor valor de n_neighbors
+            knn_imputer = KNNImputer(n_neighbors=n_neighbors_best)
             df_imputed = knn_imputer.fit_transform(df)
-            # Reconstruir el DataFrame imputado con las mismas columnas
             df_imputed = pd.DataFrame(df_imputed, columns=df.columns)
         else:
             raise ValueError("El parámetro 'metodo' debe ser uno de: 'mm', 'knn'.")
