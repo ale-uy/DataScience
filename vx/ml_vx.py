@@ -293,21 +293,18 @@ class Tools:
 
         :return: Serie con los números de cluster.
         """
-        # Escalar los datos
-        scaler = StandardScaler()
-        scaled_data = scaler.fit_transform(df)
         
         if dbscan:
             # Aplicar DBSCAN clustering
             name = 'DBSCAN'
             dbscan = DBSCAN(eps=eps, min_samples=min_samples)
-            labels = dbscan.fit_predict(scaled_data)
+            labels = dbscan.fit_predict(df)
 
         else:
             # Aplicar K-Means clustering
             name = 'K-MEANS'
             kmeans = KMeans(n_clusters=k, random_state=random_state)
-            labels = kmeans.fit_predict(scaled_data)
+            labels = kmeans.fit_predict(df)
         
         # Generar el gráfico si se solicita
         if grafico:
@@ -334,15 +331,15 @@ class Tools:
         :param random_state (opt): Semilla a utilizar, aleatoria por defecto.
 
         :return: DataFrame con las probabilidades de pertenencia a cada cluster.
+        
+        Nota: Los datos deben estar escalados para obtener buen rendimiento
         """
-        # Escalar los datos
-        scaler = StandardScaler()
-        scaled_data = scaler.fit_transform(df)
+
 
         # Aplicar Gaussian Mixture Models
         gmm = GaussianMixture(n_components=num_clusters, random_state=random_state)
-        gmm.fit(scaled_data)
-        probabilities = gmm.predict_proba(scaled_data)
+        gmm.fit(df)
+        probabilities = gmm.predict_proba(df)
 
         # Generar el gráfico si se solicita
         if grafico:
@@ -357,7 +354,6 @@ class Tools:
         cluster_probabilities = pd.DataFrame(probabilities, columns=[f'Cluster_{i}' for i in range(num_clusters)], index=df.index)
 
         return cluster_probabilities
-
 
 class Graphs:
 
@@ -823,4 +819,3 @@ class ML(Tools):
             joblib.dump(model, f'{model_filename}.pkl')
 
         return metrics
-    
