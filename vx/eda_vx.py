@@ -328,7 +328,7 @@ class Eda:
         if convertir:
             df_limpio = cls.convertir_a_numericas(df_limpio,target,metodo=metodo_convertir)
         if estandarizar:
-            df_limpio = cls.estandarizar_variables(df_limpio,metodo_estandarizar)
+            df_limpio = cls.estandarizar_variables(df_limpio,target,metodo_estandarizar)
         if balancear:
             df_limpio = cls.balancear_datos(df_limpio,target)
         if mezclar:
