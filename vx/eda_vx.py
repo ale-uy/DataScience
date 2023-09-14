@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Autor: ale-uy
-Fecha: 2 Mayo 2023
-Actualizado: 23 Agosto 2023
+Fecha: 05/2023
+Actualizado: 11/2023
 Version: v2
 Archivo: eda_vx.py
 Descripción: Automatizar procesos de analisis y limpieza dn datos
@@ -13,7 +13,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from sklearn.model_selection import RandomizedSearchCV
@@ -66,7 +65,7 @@ class Eda:
             # Si y no es numérica, la convertimos utilizando LabelEncoder
             label_encoder = LabelEncoder()
             y_encoded = label_encoder.fit_transform(df[target])
-            y = pd.Series(y_encoded, name=target)
+            y = pd.Series(y_encoded, name=target) # type: ignore
         X = df.drop(target, axis=1)
 
         # Utilizamos los metodos
@@ -328,7 +327,7 @@ class Eda:
         if convertir:
             df_limpio = cls.convertir_a_numericas(df_limpio,target,metodo=metodo_convertir)
         if estandarizar:
-            df_limpio = cls.estandarizar_variables(df_limpio,metodo_estandarizar)
+            df_limpio = cls.estandarizar_variables(df_limpio,target,metodo_estandarizar)
         if balancear:
             df_limpio = cls.balancear_datos(df_limpio,target)
         if mezclar:
