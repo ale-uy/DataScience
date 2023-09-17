@@ -1,7 +1,5 @@
 ## Modulo eda_vx.py: Manipulación de Datos
 
-> Actualizacion: Ahora se puede instalar el paquete con > ``pip install ale-uy``
-
 Las clases `eda_vx.EDA` y `eda_vx.Graph` son una herramienta poderosa para realizar manipulaciones y visualizaciones de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento y limpieza de los datos.
 
 ### Métodos Disponibles
@@ -75,8 +73,6 @@ Para utilizar las clases `ML`, `EDA`, `Graph`, `Graphs`, `Tools`, simplemente im
 from vx.ml_vx import ML, Tools, Graphs
 from vx.eda_vx import EDA, Graph
 ```
-
-> Actualización: si lo instalas con `pip install ale-uy` deberas usar `from ale-uy...` en lugar de `from vx...`
 
 Recuerda asegurarte de tener las librerías necesarias instaladas en tu entorno (En anaconda solo necesitaras instalar *Lightgbm*, *Xgboost* y *Catboost*). Puedes instalar las librerías requeridas utilizando el siguiente comando en command-line (cmd, windows):
 
