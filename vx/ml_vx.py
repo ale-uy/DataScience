@@ -21,7 +21,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error, confusion_matrix, \
-    precision_score, recall_score, f1_score, roc_auc_score, r2_score, mean_squared_log_error, silhouette_score
+    precision_score, recall_score, f1_score, roc_curve, roc_auc_score, r2_score, mean_squared_log_error, silhouette_score
 from sklearn.cluster import KMeans, DBSCAN
 
 import joblib
@@ -64,7 +64,7 @@ class Tools:
             # Si no es numérica, la convertimos utilizando LabelEncoder
             label_encoder = LabelEncoder()
             y_encoded = label_encoder.fit_transform(y)
-            y = pd.Series(y_encoded, name=target)
+            y = pd.Series(y_encoded, name=target) # type: ignore
 
         # Creamos y entrenamos un modelo RandomForest
         rf_model = RandomForestClassifier(n_estimators=n_estimators, random_state=random_state) \
@@ -100,7 +100,7 @@ class Tools:
             print(f'{importancia_df[-peores:]}')
         
     @classmethod
-    def _dividir_y_convertir_datos(cls, df, target:str, test_size=0.2, 
+    def dividir_y_convertir_datos(cls, df, target:str, test_size=0.2, 
                       random_state=np.random.randint(1, 1000), 
                       encode_categorical=False)->tuple:
         """
@@ -132,7 +132,7 @@ class Tools:
                 # Si no es numérica, la convertimos utilizando LabelEncoder
                 label_encoder = LabelEncoder()
                 y_encoded = label_encoder.fit_transform(y)
-                y = pd.Series(y_encoded, name=target)
+                y = pd.Series(y_encoded, name=target) # type: ignore
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
@@ -158,13 +158,13 @@ class Tools:
         Parámetros:
             y_test (array-like): Valores verdaderos de la variable objetivo (ground truth).
             y_pred (array-like): Valores predichos por el modelo.
-            tipo_metricas (str): Podemos elegir manualmente si es 'clas' o 'reg' (clasificacion o regresion).
+            tipo_metricas (str): Podemos elegir manualmente si es 'clasificacion' o 'regresion'.
 
         Retorna:
             pandas DataFrame: Un DataFrame que contiene las métricas y sus respectivos valores, junto con una breve explicación para cada métrica.
         """
 
-        if tipo_metricas == "clas":
+        if tipo_metricas == "clasificacion":
             # Valores de clasificación
             accuracy = accuracy_score(y_test, y_pred)
             precision = precision_score(y_test, y_pred)
@@ -183,7 +183,7 @@ class Tools:
                     'Área bajo la curva ROC, que mide la capacidad de discriminación del modelo.']
             })
 
-        elif tipo_metricas == "reg":
+        elif tipo_metricas == "regresion":
             # Valores de regresión
             mse = mean_squared_error(y_test, y_pred)
             mae = mean_absolute_error(y_test, y_pred)
@@ -208,7 +208,7 @@ class Tools:
             })
 
         else:
-            raise ValueError("Los valores de y_test y y_pred deben ser del mismo tipo (int para clasificación o float para regresión).")
+            raise ValueError("Los valores para 'tipo_metrica' deben ser 'clasificacion' o 'regresion'.")
 
         return metric_df
 
@@ -356,6 +356,7 @@ class Tools:
         cluster_probabilities = pd.DataFrame(probabilities, columns=[f'Cluster_{i}' for i in range(num_clusters)], index=df.index)
 
         return cluster_probabilities
+
 
 class Graphs:
 
@@ -529,7 +530,7 @@ class ML(Tools):
         """
         
         # Dividimos los datos en conjuntos de entrenamiento y prueba
-        X_train, X_test, y_train, y_test = cls._dividir_y_convertir_datos(df, target,
+        X_train, X_test, y_train, y_test = cls.dividir_y_convertir_datos(df, target,
                                                                            test_size=test_size,
                                                                            random_state=random_state,
                                                                            encode_categorical=encode_categorical)
@@ -587,7 +588,7 @@ class ML(Tools):
             raise ValueError("El parámetro 'tipo_problema' debe ser 'clasificacion' o 'regresion'.")
 
         # Entrenar el modelo
-        lgb_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=10, verbose=50)
+        lgb_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=10, verbose=50) # type: ignore
         
         # Realizar predicciones en el conjunto de prueba
         y_pred = lgb_model.predict(X_test)
@@ -646,7 +647,7 @@ class ML(Tools):
         """
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
-        X_train, X_test, y_train, y_test = cls._dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
+        X_train, X_test, y_train, y_test = cls.dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
         # Creamos el objeto DMatrix de XGBoost
         #dtrain = xgb.DMatrix(X_train, label=y_train)
         #dtest = xgb.DMatrix(X_test, label=y_test)
@@ -759,7 +760,7 @@ class ML(Tools):
         """
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
-        X_train, X_test, y_train, y_test = cls._dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
+        X_train, X_test, y_train, y_test = cls.dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
         if grid:
             params = {
                 'learning_rate': [0.01, 0.05, 0.1, 0.3],
@@ -819,3 +820,4 @@ class ML(Tools):
             joblib.dump(model, f'{model_filename}.pkl')
 
         return metrics
+    

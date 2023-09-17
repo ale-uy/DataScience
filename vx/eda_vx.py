@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
 import matplotlib.pyplot as plt
+import seaborn as sns
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.utils import resample
@@ -427,5 +428,10 @@ class Graph:
             # Crear una serie con los clusters y devolverla
             cluster_series = pd.Series(clusters, index=df.index, name='Clusters')
             return cluster_series
-
     
+    @classmethod
+    def grafico_correlacion(cls, df) -> None:
+        corr = df.corr()
+        plt.figure(figsize=(12,10))
+        sns.heatmap(corr, linewidth=0.5, annot=True, cmap="RdBu")
+
