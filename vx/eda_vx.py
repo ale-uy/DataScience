@@ -2,7 +2,7 @@
 """
 Autor: ale-uy
 Fecha: 05/2023
-Actualizado: 11/2023
+Actualizado: 09/2023
 Version: v2
 Archivo: eda_vx.py
 Descripción: Automatizar procesos de analisis y limpieza dn datos
@@ -13,13 +13,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.utils import resample
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, RobustScaler, StandardScaler
+from imblearn.over_sampling import SMOTENC
 
 
 class Eda:
@@ -248,34 +247,49 @@ class Eda:
         return aux
     
     @classmethod
-    def balancear_datos(cls, df, target:str):
+    def balancear_datos(cls, df, target:str, undersampling=True):
         """
         Equilibra un conjunto de datos desequilibrado en una tarea 
         de clasificación mediante el método de sobre muestreo.
         Parámetros:
             df (pandas DataFrame): El DataFrame que contiene las variables de entrada y la variable objetivo.
             target (str): El nombre de la columna que contiene la variable objetivo.
+            undersampling (bool): realiza un undersampling si True (defecto), en False utiliza algoritmo /
+            "SMOTENC" para generar oversampling.
         Retorna:
-            numpy array, numpy array: El conjunto de datos equilibrado (X_balanced) 
-            y las etiquetas de las clases equilibradas (y_balanced).
+            pandas.DataFrame
         Ejemplo:
             # Supongamos que tenemos un DataFrame df con clases desequilibradas
             # y queremos equilibrar las clases utilizando el método de sobre muestreo:
-            X_balanced, y_balanced = Eda.balancear_datos(df, 'variable_objetivo')
+            df_balanced = Eda.balancear_datos(df, 'variable_objetivo')
         """
-        X = df.drop(target, axis=1)  # Datos de entrada
-        y = LabelEncoder().fit_transform(df[target])  # Etiquetas de las clases (variable objetivo)
-        # Realizamos el muestreo de datos utilizando resample
-        X_resampled, y_resampled = resample(X[y == 0], y[y == 0], replace=True, n_samples=X[y == 1].shape[0]) # type: ignore
-        # Agregamos las muestras de la clase minoritaria al conjunto original
-        X_balanced = np.vstack((X, X_resampled))
-        y_balanced = np.hstack((y, y_resampled))
-        # Convertimos y_balanced en un DataFrame
-        y_balanced_df = pd.DataFrame(y_balanced, columns=[target])
-        # Concatenamos X_balanced y y_balanced_df horizontalmente
-        df_balanced = pd.concat([pd.DataFrame(X_balanced, columns=X.columns), y_balanced_df], axis=1)
-        return df_balanced
+        if undersampling:
+            df_no = df[df[target] == 0]
+            df_yes = df[df[target] == 1]
+            df_no_reduced = df_no.sample(df_yes.shape[0],random_state=1)
+            df_balanced = pd.concat([df_no_reduced,df_yes],axis=0)
+            df_balanced = df_balanced.sample(frac=1,random_state=1)
+        else:
+            raise NotImplemented('Metodo no implementado, utilizar "undesampling=True"')
+            # Separa las características y la columna objetivo (target)
+            X = df.drop(columns=[target])
+            y = df[target]
+
+            # Encuentra las columnas numéricas y categóricas
+            # numerical_cols = X.select_dtypes(include=['number']).columns
+            categorical_cols = X.select_dtypes(exclude=['number']).columns
+
+            # Crea una instancia de SMOTE-NC
+            smote_nc = SMOTENC(categorical_features=[X.columns.get_loc(col) for col in categorical_cols])
+
+            # Aplica SMOTE-NC para generar nuevas muestras
+            X_resampled, y_resampled = smote_nc.fit_resample(X, y)
+
+            # Crea un nuevo DataFrame con las muestras sintéticas
+            df_balanced = pd.concat([pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=target)], axis=1)
     
+        return df_balanced
+        
     @classmethod
     def all_eda(cls,df,
                 target:str,
@@ -288,6 +302,7 @@ class Eda:
                 estandarizar=False,
                 metodo_estandarizar="zscore",
                 balancear=False,
+                undesampling=True,
                 mezclar=False):
         """
         Realiza un Análisis Exploratorio de Datos (EDA) completo en un DataFrame dado.
@@ -330,7 +345,7 @@ class Eda:
         if estandarizar:
             df_limpio = cls.estandarizar_variables(df_limpio,target,metodo_estandarizar)
         if balancear:
-            df_limpio = cls.balancear_datos(df_limpio,target)
+            df_limpio = cls.balancear_datos(df_limpio,target,undersampling=undesampling)
         if mezclar:
             df_limpio = cls.mezclar_datos(df_limpio)
         return df_limpio
@@ -431,7 +446,16 @@ class Graph:
     
     @classmethod
     def grafico_correlacion(cls, df) -> None:
+        """
+        Genera un heatmap de correlación para el DataFrame dado.
+
+        Args:
+            df: Un DataFrame con los datos.
+
+        Returns:
+            None.
+        """
         corr = df.corr()
         plt.figure(figsize=(12,10))
-        sns.heatmap(corr, linewidth=0.5, annot=True, cmap="RdBu")
+        sns.heatmap(corr, linewidth=0.5, annot=True, cmap="RdBu", vmin=-1, vmax=1)
 

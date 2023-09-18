@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Autor: ale-uy
-Fecha: 31 Julio 2023
-Actualizado: 23 Agosto 2023
+Fecha: 07/2023
+Actualizado: 08/2023
 Version: v2
 Archivo: ml_vx.py
 Descripción: Automatizar procesos de machine learning
@@ -17,11 +17,11 @@ import lightgbm as lgb
 from sklearn.mixture import GaussianMixture
 import xgboost as xgb
 import catboost as cb
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error, confusion_matrix, \
-    precision_score, recall_score, f1_score, roc_curve, roc_auc_score, r2_score, mean_squared_log_error, silhouette_score
+    precision_score, recall_score, f1_score, roc_auc_score, r2_score, mean_squared_log_error, silhouette_score
 from sklearn.cluster import KMeans, DBSCAN
 
 import joblib
@@ -526,7 +526,8 @@ class ML(Tools):
                 y_pred = loaded_model.predict(X_test)
 
         Retorna:
-            tuple: Una tupla que contiene las métricas y las predicciones en el orden: (metrics, y_pred).
+            print(pd.DataFrame): Un DataFrame que contiene diferentes métricas y estadísticas del modelo.
+            modelo LightGBM: El Modelo entrenado.
         """
         
         # Dividimos los datos en conjuntos de entrenamiento y prueba
@@ -590,8 +591,6 @@ class ML(Tools):
         # Entrenar el modelo
         lgb_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=10, verbose=50) # type: ignore
         
-        # Realizar predicciones en el conjunto de prueba
-        y_pred = lgb_model.predict(X_test)
         # Realizamos predicciones en el conjunto de prueba
         y_pred = lgb_model.predict(X_test)
         
@@ -607,7 +606,8 @@ class ML(Tools):
             # Guardar el modelo entrenado en disco
             joblib.dump(lgb_model, f'{model_filename}.pkl')
 
-        return metrics
+        print(metrics)
+        return lgb_model
 
     @classmethod
     def modelo_xgboost(cls, df, target:str, tipo_problema:str, test_size=0.2, cv=5,
@@ -643,14 +643,12 @@ class ML(Tools):
                 y_pred = loaded_model.predict(X_test)
 
         Retorna:
-            pd.DataFrame: Un DataFrame que contiene diferentes métricas y estadísticas del modelo.
+            print(pd.DataFrame): Un DataFrame que contiene diferentes métricas y estadísticas del modelo.
+            modelo XGBoost: El Modelo entrenado.
         """
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
         X_train, X_test, y_train, y_test = cls.dividir_y_convertir_datos(df,target,test_size=test_size,random_state=random_state)
-        # Creamos el objeto DMatrix de XGBoost
-        #dtrain = xgb.DMatrix(X_train, label=y_train)
-        #dtest = xgb.DMatrix(X_test, label=y_test)
 
         if grid:
             # Parámetros del modelo XGBoost
@@ -720,7 +718,8 @@ class ML(Tools):
             # Guardar el modelo entrenado en disco
             joblib.dump(xgb_model, f'{model_filename}.pkl')
         
-        return metrics
+        print(metrics)
+        return xgb_model
     
     @classmethod
     def modelo_catboost(cls, df, target:str, tipo_problema:str, test_size=0.2, n_iter=10,
@@ -756,7 +755,8 @@ class ML(Tools):
                 y_pred = loaded_model.predict(X_test)
 
         Retorna:
-            pd.DataFrame: Un DataFrame que contiene diferentes métricas y estadísticas del modelo.
+            print(pd.DataFrame): Un DataFrame que contiene diferentes métricas y estadísticas del modelo.
+            modelo CatBoost: El Modelo entrenado.
         """
 
         # Dividimos los datos en conjuntos de entrenamiento y prueba
@@ -819,5 +819,6 @@ class ML(Tools):
             # Guardar el modelo entrenado en disco
             joblib.dump(model, f'{model_filename}.pkl')
 
-        return metrics
+        print(metrics)
+        return model
     
