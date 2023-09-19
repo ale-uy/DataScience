@@ -358,7 +358,7 @@ class Tools:
         return cluster_probabilities
 
 
-class Graphs:
+class Graphs_ml:
 
     @classmethod
     def plot_clasificacion(cls, y_true, y_pred)->None:

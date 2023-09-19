@@ -1,6 +1,6 @@
-## Modulo eda_vx.py: Manipulación de Datos
+## Modulo eda.py: Manipulación de Datos
 
-Las clases `eda_vx.EDA` y `eda_vx.Graph` son una herramienta poderosa para realizar manipulaciones y visualizaciones de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento y limpieza de los datos.
+Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta poderosa para realizar manipulaciones y visualizaciones de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento y limpieza de los datos.
 
 ### Métodos Disponibles
 
@@ -24,7 +24,7 @@ Las clases `eda_vx.EDA` y `eda_vx.Graph` son una herramienta poderosa para reali
 
 9. `all_eda(...)`: Pipeline para realizar varios pasos (o todos) de la clase de forma automatica.
 
-#### Visualización de Datos (Graph)
+#### Visualización de Datos (Graphs_eda)
 
 10. `graficos_categoricos(df)`: Crea gráficos de barras horizontales para cada variable categórica en el DataFrame.
 
@@ -36,9 +36,9 @@ Las clases `eda_vx.EDA` y `eda_vx.Graph` son una herramienta poderosa para reali
 
 14. `grafico_dendrograma(df)`: Genera un dendrograma que es útil para determinar el valor de k (grupos) para usar con la imputacion knn.
 
-## Modulo ml_vx.py: Modelado de Datos
+## Modulo ml.py: Modelado de Datos
 
-La clase `ml_vx.ML` es una herramienta poderosa para realizar modelados y visualizacion de datos de manera sencilla y eficiente. Esta clase están diseñadas para facilitar diversas tareas relacionadas con el procesamiento, entrenamiento y evaluación de modelos de aprendizaje automático.
+La clase `ml.ML` es una herramienta poderosa para realizar modelados y visualizacion de datos de manera sencilla y eficiente. Esta clase están diseñadas para facilitar diversas tareas relacionadas con el procesamiento, entrenamiento y evaluación de modelos de aprendizaje automático.
 
 ### Modelado de Datos
 1. `modelo_lightgbm(...)`: Utiliza LightGBM para predecir la variable objetivo en un DataFrame. Este método admite problemas de clasificación y regresión.
@@ -63,15 +63,17 @@ La clase `ml_vx.ML` es una herramienta poderosa para realizar modelados y visual
 
 9. `generar_soft_clusters(df)`: Aplica Gaussian Mixture Models (GMM) al dataframe para generar una tabla con las probabilidades de pertencia de cada observacion al cluster especifico.
 
-10. `Graphs.plot_cluster(df)`: Gráfico de codo y silueta que es escencial para determinar el número de clusters óptimo a utilizar en los métodos de clusters anteriores.
+10. `Graphs_ml.plot_cluster(df)`: Gráfico de codo y silueta que es escencial para determinar el número de clusters óptimo a utilizar en los métodos de clusters anteriores.
 
 ### Instalación
 
-Para utilizar las clases `ML`, `EDA`, `Graph`, `Graphs`, `Tools`, simplemente importa la clase en tu código (copia la carpeta vx en el directorio en que estes trabajando):
+> Actualización: ahora puedes instalar el paquete desde pip con `pip install ale-uy`
+
+Para utilizar las clases `ML`, `EDA`, `Graphs_eda`, `Graphs_ml`, `Tools`, simplemente importa la clase en tu código (copia la carpeta vx en el directorio en que estes trabajando):
 
 ```python
-from vx.ml_vx import ML, Tools, Graphs
-from vx.eda_vx import EDA, Graph
+from vx.ml import ML, Tools, Graphs_ml
+from vx.eda import EDA, Graphs_eda
 ```
 
 Recuerda asegurarte de tener las librerías necesarias instaladas en tu entorno (En anaconda solo necesitaras instalar *Lightgbm*, *Xgboost* y *Catboost*). Puedes instalar las librerías requeridas utilizando el siguiente comando en command-line (cmd, windows):
@@ -81,12 +83,12 @@ pip install -r requirements.txt
 ```
 
 ## Ejemplo de Uso
-Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (IMPORTANTE: Colocar los archivos **eda_vx.py** y **ml_vx.py** en la carpeta donde estes trabajando):
+Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (IMPORTANTE: Colocar los archivos **eda.py** y **ml.py** en la carpeta donde estes trabajando):
 
 ```python
 # Importar la clase ML
-from vx.ml_vx import ML, Tools, Graphs
-from vx.eda_vx import EDA, Graph
+from vx.ml import ML, Tools, Graphs_ml
+from vx.eda import EDA, Graphs_eda
 
 # Cargar los datos en un DataFrame
 data = pd.read_csv(...)  # Tu DataFrame con los datos

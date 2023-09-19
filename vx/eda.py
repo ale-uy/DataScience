@@ -351,7 +351,7 @@ class Eda:
         return df_limpio
     
 
-class Graph:
+class Graphs_eda:
 
     @classmethod
     def graficos_categoricos(cls, df)->None:
