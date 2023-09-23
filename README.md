@@ -74,25 +74,25 @@ Las clases `ts.Ts`, `ts.Graphs_ts` y `ts.Profeta` son una poderosa herramienta p
 #### Clase TS
 Cada método tiene su funcionalidad específica relacionada con el análisis y la manipulación de series temporales. Puede utilizar estos métodos para realizar diversas tareas en datos de series temporales, incluida la carga de datos, el análisis estadístico, las pruebas de estacionariedad, la descomposición, la diferenciación, la transformación y el modelado SARIMA.
 
-`TS.datos_estadisticos(...)`: Este método calcula varias propiedades estadísticas de una serie temporal, como media, mediana, desviación estándar, mínimo, máximo, percentiles, coeficiente de variación, asimetría y curtosis. Devuelve estas estadísticas como un diccionario.
-`TS.pruebas_raiz_unitaria(...)`: Este método realiza pruebas de raíz unitarias para determinar si una serie temporal es estacionaria. Admite tres pruebas diferentes: Augmented Dickey-Fuller (ADF), Kwiatkowski-Phillips-Schmidt-Shin (KPSS) y Phillips Perron (PP). Devuelve información de diagnóstico y, si es necesario, realiza la diferenciación para hacer que la serie sea estacionaria.
-`TS.aplicar_descomposicion(...)`: Este método aplica la descomposición estacional a una serie temporal, separándola en tendencia, estacionalidad y residuos. Puede especificar el tipo de descomposición (aditiva o multiplicativa) y el período estacional.
-`TS.aplicar_diferenciacion(...)`: Este método realiza la diferenciación en una serie temporal para hacerla estacionaria. Puede especificar el número de períodos que va a diferenciar.
-`TS.aplicar_transformacion(...)`: Este método aplica transformaciones a una serie temporal. Admite tres métodos de transformación: Box-Cox, Yeo-Johnson y logarítmica. Devuelve la serie temporal transformada.
-`TS.modelo_sarima(...)`: Este método se ajusta a un modelo ARIMA estacional (SARIMA) a una serie temporal. Puede especificar los órdenes de modelo para autorregresivo (AR), diferenciación (d), media móvil (MA), autorregresivo estacional (SAR), diferenciación estacional (D), promedio móvil estacional (SMA) y los períodos estacionales. Devuelve los resultados de la adaptación del modelo SARIMA.
+1. `TS.datos_estadisticos(...)`: Este método calcula varias propiedades estadísticas de una serie temporal, como media, mediana, desviación estándar, mínimo, máximo, percentiles, coeficiente de variación, asimetría y curtosis. Devuelve estas estadísticas como un diccionario.
+2. `TS.pruebas_raiz_unitaria(...)`: Este método realiza pruebas de raíz unitarias para determinar si una serie temporal es estacionaria. Admite tres pruebas diferentes: Augmented Dickey-Fuller (ADF), Kwiatkowski-Phillips-Schmidt-Shin (KPSS) y Phillips Perron (PP). Devuelve información de diagnóstico y, si es necesario, realiza la diferenciación para hacer que la serie sea estacionaria.
+3. `TS.aplicar_descomposicion(...)`: Este método aplica la descomposición estacional a una serie temporal, separándola en tendencia, estacionalidad y residuos. Puede especificar el tipo de descomposición (aditiva o multiplicativa) y el período estacional.
+4. `TS.aplicar_diferenciacion(...)`: Este método realiza la diferenciación en una serie temporal para hacerla estacionaria. Puede especificar el número de períodos que va a diferenciar.
+5. `TS.aplicar_transformacion(...)`: Este método aplica transformaciones a una serie temporal. Admite tres métodos de transformación: Box-Cox, Yeo-Johnson y logarítmica. Devuelve la serie temporal transformada.
+6. `TS.modelo_sarima(...)`: Este método se ajusta a un modelo ARIMA estacional (SARIMA) a una serie temporal. Puede especificar los órdenes de modelo para autorregresivo (AR), diferenciación (d), media móvil (MA), autorregresivo estacional (SAR), diferenciación estacional (D), promedio móvil estacional (SMA) y los períodos estacionales. Devuelve los resultados de la adaptación del modelo SARIMA.
 
 #### Clase Graphs_ts
 Estos métodos son útiles para explorar y comprender datos de series temporales, identificar patrones y evaluar supuestos de modelos. Para utilizar estos métodos, debe pasar un DataFrame pandas que contenga datos de series temporales y especificar las columnas y parámetros relevantes.
 
-`Graphs_ts.graficar_autocorrelacion(...)`: Este método visualiza la función de autocorrelación (ACF), la función de autocorrelación parcial (PACF) y la ACF estacional de una serie temporal (Sacf y Spacf). Puede especificar el número de retrasos y el nivel de significación de las pruebas.
-`Graphs_ts.graficar_estacionalidad_tendencia_ruido(...)`:  Este método descompone una serie temporal en su tendencia, estacionalidad y componentes residuales utilizando un modelo aditivo o multiplicativo. A continuación, traza estos componentes junto con la serie temporal original.
-`Graphs_ts.graficar_diagrama_caja(...)`: Este método genera y muestra diagramas de caja para visualizar datos agrupados por año, mes, día, etc. Puede especificar la columna de tiempo, la columna de valor y la opción de agrupación.
-`Graphs_ts.graficar_correlograma(...)`: Este método crea y muestra un correlograma (gráfico de autocorrelación) para una serie temporal. Ayuda a identificar correlaciones entre diferentes retrasos en la serie.
-`Graphs_ts.graficar_profeta(...)`: Este método genera gráficos relacionados con un modelo de Profeta y sus predicciones. Puede elegir visualizar los componentes (tendencia, estacionalidad) o toda la predicción.
+7. `Graphs_ts.graficar_autocorrelacion(...)`: Este método visualiza la función de autocorrelación (ACF), la función de autocorrelación parcial (PACF) y la ACF estacional de una serie temporal (Sacf y Spacf). Puede especificar el número de retrasos y el nivel de significación de las pruebas.
+8. `Graphs_ts.graficar_estacionalidad_tendencia_ruido(...)`:  Este método descompone una serie temporal en su tendencia, estacionalidad y componentes residuales utilizando un modelo aditivo o multiplicativo. A continuación, traza estos componentes junto con la serie temporal original.
+9. `Graphs_ts.graficar_diagrama_caja(...)`: Este método genera y muestra diagramas de caja para visualizar datos agrupados por año, mes, día, etc. Puede especificar la columna de tiempo, la columna de valor y la opción de agrupación.
+10. `Graphs_ts.graficar_correlograma(...)`: Este método crea y muestra un correlograma (gráfico de autocorrelación) para una serie temporal. Ayuda a identificar correlaciones entre diferentes retrasos en la serie.
+11. `Graphs_ts.graficar_profeta(...)`: Este método genera gráficos relacionados con un modelo de Profeta y sus predicciones. Puede elegir visualizar los componentes (tendencia, estacionalidad) o toda la predicción.
 
 #### Clase Profeta:
-`Profeta.cargar_modelo_prophet(...)`: Este método carga un modelo de Prophet guardado previamente desde un archivo JSON. Puede especificar el nombre del archivo del modelo que se va a cargar.
-`Profeta.entrenar_modelo(...)`: Este método entrena y ajusta un modelo de Profeta para el pronóstico de series temporales.
+12. `Profeta.cargar_modelo_prophet(...)`: Este método carga un modelo de Prophet guardado previamente desde un archivo JSON. Puede especificar el nombre del archivo del modelo que se va a cargar.
+13. `Profeta.entrenar_modelo(...)`: Este método entrena y ajusta un modelo de Profeta para el pronóstico de series temporales.
 
 ## Instalación
 
@@ -105,7 +105,7 @@ from ale_uy.ts import TS, Graphs_ts, Profeta
 ```
 
 ## Ejemplo de Uso
-Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (IMPORTANTE: Colocar los archivos **[eda.py]()** y **[ml.py]()** en la carpeta donde estes trabajando si es que no instalaste via pip):
+Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (IMPORTANTE: Colocar la carpeta **`ale_uy/`** con sus correspondientes archivos **[eda.py]()**, **[ts.py]()** y **[ml.py]()** en la carpeta donde estes trabajando, si es que no instalaste via pip (``pip install ale-uy``)):
 
 ```python
 # Importar los modulos ml y eda con sus respectivas clases

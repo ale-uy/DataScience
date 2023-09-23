@@ -1,3 +1,5 @@
 CheatSheet
 activar_entorno.bat
 entorno_NO_BORRAR
+__pycache__
+.vscode
