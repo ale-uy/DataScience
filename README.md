@@ -100,7 +100,7 @@ Para utilizar las clases `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, `Tools`, simple
 
 ```python
 from ale_uy.eda import EDA, Graphs_eda
-from ale_uy.ml import ML, Tools, Graphs.ml
+from ale_uy.ml import ML, Tools, Graphs_ml
 from ale_uy.ts import TS, Graphs_ts, Profeta
 ```
 
