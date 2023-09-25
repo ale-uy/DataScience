@@ -1,3 +1,5 @@
+[Proyecto en PyPi](https://pypi.org/project/ale-uy/)
+___
 ## Modulo [eda.py](): Manipulación de Datos
 
 Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipulaciones y visualizaciones de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento y limpieza de los datos.
