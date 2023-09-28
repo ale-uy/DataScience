@@ -113,7 +113,7 @@ from ale_uy.ts import TS, Graphs_ts, Propheta
 ```
 
 ## Ejemplo de Uso
-Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (IMPORTANTE: Colocar la carpeta **`ale_uy/`** con sus correspondientes archivos **[eda.py]()**, **[ts.py]()** y **[ml.py]()** en la carpeta donde estes trabajando, si es que no instalaste via pip (``pip install ale-uy``)):
+Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (IMPORTANTE: Colocar la carpeta **`ale_uy/`** con sus correspondientes archivos **[eda.py]()**, **[ts.py]()** y **[ml.py]()** en la carpeta donde estes trabajando, si es que no instalaste via pip (``pip install ale-uy``):
 
 ```python
 # Importar los modulos ml y eda con sus respectivas clases
