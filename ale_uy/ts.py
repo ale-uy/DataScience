@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Autor: ale-uy
-Fecha: 08/2023
-Actualizado: 09/2023
+Author: ale-uy
+Date: 08/2023
+Updated: 09/2023
 Version: v1
-Archivo: ts.py
-Descripción: Metodos para aplicar algoritmos de serie temporal de manera sencilla.
-Licencia: Apache License Version 2.0
+File: ts.py
+Description: Methods for applying time series algorithms in a straightforward manner.
+License: Apache License Version 2.0
 """
 
 import itertools
@@ -27,211 +27,211 @@ from prophet.serialize import model_to_json, model_from_json
 from prophet.plot import plot, plot_components
 
 
-
 class TS:
 
     @classmethod
-    def cargar_serie(cls, file_path:str, col_dates:str, sep=",", na_values="") -> pd.DataFrame:
+    def load_time_series(cls, file_path: str, col_dates: str, sep=",", na_values="") -> pd.DataFrame:
         """
-        Carga una serie temporal desde un archivo CSV utilizando pandas.
+        Load a time series from a CSV file using pandas.
 
         Args:
-            file_path (str): Ruta del archivo CSV.
-            col_dates (str): Nombre de la columna que contiene las fechas a ser parseadas como fechas.
-            sep (str, opcional): Delimitador utilizado en el archivo CSV. Por defecto es ','.
-            na_values (str, opcional): Valores que deben considerarse como faltantes. Por defecto es una cadena vacía.
+            file_path (str): Path to the CSV file.
+            col_dates (str): Name of the column containing dates to be parsed as dates.
+            sep (str, optional): Delimiter used in the CSV file. Default is ','.
+            na_values (str, optional): Values to be considered as missing. Default is an empty string.
 
         Returns:
-            pd.DataFrame: DataFrame que contiene la serie temporal cargada desde el archivo CSV.
+            pd.DataFrame: DataFrame containing the time series loaded from the CSV file.
         """
-        serie = pd.read_csv(file_path, parse_dates=[col_dates], sep=sep, index_col=col_dates, na_values=na_values)
-        return serie
+        time_series = pd.read_csv(file_path, parse_dates=[col_dates], sep=sep, index_col=col_dates, na_values=na_values)
+        return time_series
     
     @classmethod
-    def datos_estadisticos(cls, df:pd.DataFrame, target:str):
+    def statistical_data(cls, df: pd.DataFrame, target: str):
         """
-        Identifica los principales datos probabilísticos de la serie temporal.
+        Identify key probabilistic statistics of the time series.
 
         Args:
-            df (pd.DataFrame): El dataframe.
-            target (str): La columna que posee los valores de la serie de tiempo a analizar.
+            df (pd.DataFrame): The dataframe.
+            target (str): The column containing the values of the time series to analyze.
 
         Returns:
-            dict: Un diccionario que contiene estadísticas probabilísticas de la serie temporal.
+            dict: A dictionary containing probabilistic statistics of the time series.
         """
-        serie = df[target]
+        series = df[target]
         stats = {
-            "Media": serie.mean(),
-            "Mediana": serie.median(),
-            "Desviación Estándar": serie.std(),
-            "Mínimo": serie.min(),
-            "Máximo": serie.max(),
-            "Percentil 25": np.percentile(serie, 25),
-            "Percentil 75": np.percentile(serie, 75),
-            "Rango Interquartil": np.percentile(serie, 75) - np.percentile(serie, 25),
-            "Coeficiente de Variación": (serie.std() / serie.mean()) * 100,
-            "Asimetría": serie.skew(),
-            "Curtosis": serie.kurtosis()
+            "Mean": series.mean(),
+            "Median": series.median(),
+            "Standard Deviation": series.std(),
+            "Minimum": series.min(),
+            "Maximum": series.max(),
+            "25th Percentile": np.percentile(series, 25),
+            "75th Percentile": np.percentile(series, 75),
+            "Interquartile Range": np.percentile(series, 75) - np.percentile(series, 25),
+            "Coefficient of Variation": (series.std() / series.mean()) * 100,
+            "Skewness": series.skew(),
+            "Kurtosis": series.kurtosis()
         }
         return stats
     
     @classmethod
-    def pruebas_raiz_unitaria(cls, df:pd.DataFrame, target:str, prueba='adf', alpha="5%"):
+    def unit_root_tests(cls, df: pd.DataFrame, target: str, test='adf', alpha="5%"):
         """
-        Realiza una prueba de raíz unitaria en una serie de tiempo para determinar su estacionariedad.
+        Conducts a unit root test on a time series to determine its stationarity.
 
         Args:
-            df (pd.DataFrame): El dataframe.
-            target (str): La columna que posee los valores de la serie de tiempo a analizar.
-            prueba (str, opcional): El tipo de prueba a realizar. Puede ser "adf" (Dickey Fuller aumentada),
-                "kpss" (Kwiatkowski-Phillips-Schmidt-Shin) o "pp" (Phillips Perron). Por defecto, es "adf".
-            alpha (str, opcional): El nivel de significancia para la prueba. Por defecto, es "5%".
+            df (pd.DataFrame): The dataframe.
+            target (str): The column containing the values of the time series to analyze.
+            test (str, optional): The type of test to perform. It can be "adf" (Augmented Dickey-Fuller),
+                "kpss" (Kwiatkowski-Phillips-Schmidt-Shin), or "pp" (Phillips Perron). Default is "adf".
+            alpha (str, optional): The significance level for the test. Default is "5%".
+                Options: 1%, 5% and 10%.
 
         Returns:
-            None: Si la prueba es "adf" y se muestra información diagnóstica y gráficas en caso de no ser estacionaria.
-            dict: Si la prueba es "kpss" o "pp", se devuelve un diccionario con los resultados de la prueba.
-                El diccionario contiene el Estadístico KPSS, Valor p, Lags Usados y Valores Críticos (solo para "kpss").
+            None: If the test is "adf," it displays diagnostic information and plots if the series is non-stationary.
+            dict: If the test is "kpss" or "pp," it returns a dictionary with the test results.
+                The dictionary contains the KPSS Statistic, p-value, Used Lags, and Critical Values (only for "kpss").
         """
-        serie = df[target]
-        if prueba=='pp':
-            test = adfuller(serie, regression="ct")
-        elif prueba=='kpss':
-            test = kpss(serie)
+        series = df[target]
+        if test == 'pp':
+            test_result = adfuller(series, regression="ct")
+        elif test == 'kpss':
+            test_result = kpss(series)
         else:
-            test = adfuller(serie)
-        print('ADF Statistic: %f' % test[0])
-        print('p-value: %f' % test[1])
+            test_result = adfuller(series)
+        print('ADF Statistic: %f' % test_result[0])
+        print('p-value: %f' % test_result[1])
         d = 0
-        for key, value in test[4].items(): # type: ignore
+        for key, value in test_result[4].items():
             print('\t%s: %.3f' % (key, value))
-        if test[0] > test[4][alpha]: # type: ignore
-          while test[0] > test[4][alpha]: # type: ignore
-            d += 1
-            print()
-            print("La serie no es estacionaria. Se necesita diferenciar la serie.")
-            dtrain = np.diff(serie, n=d+1)
-            test = adfuller(dtrain)
-            print()
-            print('ADF Statistic: %f' % test[0])
-            print('p-value: %f' % test[1])
-            for key, value in test[4].items(): # type: ignore
-                print('\t%s: %.3f' % (key, value))
+        if test_result[0] > test_result[4][alpha]:
+            while test_result[0] > test_result[4][alpha]:
+                d += 1
+                print()
+                print("The series is non-stationary. Differencing is needed.")
+                differenced_series = np.diff(series, n=d+1)
+                test_result = adfuller(differenced_series)
+                print()
+                print('ADF Statistic: %f' % test_result[0])
+                print('p-value: %f' % test_result[1])
+                for key, value in test_result[4].items():
+                    print('\t%s: %.3f' % (key, value))
 
-            ## Graficas de ambos
-            _, ax = plt.subplots(2,1)
-            ax[0].plot(serie, color="red")
-            ax[0].set_title("Serie original")
-            ax[1].plot(dtrain, color="blue")
-            ax[1].set_title("Serie diferenciada")
-            plt.subplots_adjust(hspace=0.5)
-            plt.show()
+                ## Plot both series
+                _, ax = plt.subplots(2,1)
+                ax[0].plot(series, color="red")
+                ax[0].set_title("Original Series")
+                ax[1].plot(differenced_series, color="blue")
+                ax[1].set_title("Differenced Series")
+                plt.subplots_adjust(hspace=0.5)
+                plt.show()
 
         else:
-          print("La serie es estacionaria.")
-          dtrain = serie
+            print("The series is stationary.")
+            differenced_series = series
 
-        print('El coeficiente d: ', d)
+        print('The coefficient d: ', d)
 
     @classmethod
-    def aplicar_descomposicion(cls, df:pd.DataFrame, target:str, periodo_estacional:int, model='additive'):
+    def apply_decomposition(cls, df: pd.DataFrame, target: str, seasonal_period: int, model='additive'):
         """
-        Aplica una descomposición estacional a una serie de tiempo.
+        Applies seasonal decomposition to a time series.
 
         Args:
-            df (pd.DataFrame): El dataframe.
-            target (str):  El nombre de la serie de tiempo a descomponer.
-            periodo_estacional (int): El período de estacionalidad en la serie de tiempo.
-            model (str, opcional): Modelo de descomposición a utilizar: 'additive' (defecto) o 'multiplicative'.
+            df (pd.DataFrame): The dataframe.
+            target (str): The name of the time series to decompose.
+            seasonal_period (int): The seasonality period in the time series.
+            model (str, optional): Decomposition model to use: 'additive' (default) or 'multiplicative'.
 
         Returns:
-            tuple: Tupla que contiene tres componentes: tendencia, estacionalidad y residuos.
+            tuple: A tuple containing three components: trend, seasonality, and residuals.
         """
-        serie = df[target]
-        result = seasonal_decompose(serie, model=model, period=periodo_estacional)
+        series = df[target]
+        result = seasonal_decompose(series, model=model, period=seasonal_period)
         return result.trend, result.seasonal, result.resid
 
     @classmethod
-    def aplicar_diferenciacion(cls, df:pd.DataFrame, target:str, periodos=1):
+    def apply_differencing(cls, df: pd.DataFrame, target: str, periods=1):
         """
-        Realiza la diferenciación de una serie de tiempo.
+        Performs differencing on a time series.
 
         Args:
-            df (pd.DataFrame): El dataframe que contiene los datos de la serie de tiempo.
-            target (str): El nombre de la serie de tiempo a diferenciar.
-            periodos (int, opcional): El número de períodos de diferencia a aplicar. Por defecto, es 1.
+            df (pd.DataFrame): The dataframe containing the time series data.
+            target (str): The name of the time series to difference.
+            periods (int, optional): The number of difference periods to apply. Default is 1.
 
         Returns:
-            pd.Series: La serie de tiempo diferenciada.
+            pd.Series: The differenced time series.
         """
-        serie = df[target]
+        series = df[target]
 
-        # Aplicar la diferenciación
-        differenced_series = serie.diff(periods=periodos).dropna()
+        # Apply differencing
+        differenced_series = series.diff(periods=periods).dropna()
 
         return differenced_series
 
     @classmethod
-    def aplicar_transformacion(cls, df:pd.DataFrame, target:str, method='box-cox'):
+    def apply_transformation(cls, df: pd.DataFrame, target: str, method='box-cox'):
         """
-        Aplica transformación a una serie temporal.
+        Applies transformation to a time series.
 
         Args:
-            df (pd:DataFrame): dataframe que contiene la serie temporal.
-            target (str): Nombre de la serie temporal a transformar (nombre de la columna valores).
-            method (str, opcional): Opciones 'box-cox' (defecto), 'yj' o 'yeo-johnson', 'log' o 'logaritmo'.
-                                    
+            df (pd.DataFrame): DataFrame containing the time series.
+            target (str): Name of the time series to transform (column name of the values).
+            method (str, optional): Options are 'box-cox' (default), 'yj' or 'yeo-johnson', 'log' or 'logarithm'.
+
         Returns:
-            pd.Series: Serie temporal transformada con el método seleccionado.
+            pd.Series: Transformed time series using the selected method.
         """
-        serie = df[target]
-        if method == 'log' or method == 'logaritmo':
+        series = df[target]
+        if method == 'log' or method == 'logarithm':
             transformed_data = pd.DataFrame()
-            transformed_data[0] = np.log(serie)
+            transformed_data[0] = np.log(series)
         elif method == 'yj' or method == 'yeo-johnson':
-            transformed_data = yeojohnson(serie)
-            print(f'El valor de Lambda que maximiza la log-verosimilitud es: {transformed_data[1]:.3}')
+            transformed_data, lambda_val = yeojohnson(series)
+            print(f"The lambda value that maximizes log-likelihood is: {lambda_val:.3f}")
         else:
-            transformed_data = boxcox(serie)
-            print(f'El valor de Lambda que maximiza la log-verosimilitud es: {transformed_data[1]:.3}')
-        
-        transformed_serie = pd.Series(transformed_data[0], index=df.index)
+            transformed_data, lambda_val = boxcox(series)
+            print(f"The lambda value that maximizes log-likelihood is: {lambda_val:.3f}")
 
-        return transformed_serie
-
+        transformed_series = pd.Series(transformed_data[0], index=df.index)
+    
+        return transformed_series
+    
     @classmethod
-    def modelo_sarima(cls, df:pd.DataFrame, target:str, p=0, d=0, q=0, P=0, D=0, Q=0, s=0):
+    def sarima_model(cls, df: pd.DataFrame, target: str, p=0, d=0, q=0, P=0, D=0, Q=0, s=0):
         """
-        Ajusta un modelo SARIMA (Seasonal ARIMA) a la serie temporal.
-
+        Fits a SARIMA (Seasonal ARIMA) model to the time series.
+    
         Args:
-            df (pd:DataFrame): dataframe que contiene la serie temporal.
-            target (str): Nombre de la serie temporal a ser modelada (nombre de la columna valores).
-            p (int): Orden del componente autoregresivo (AR).
-            d (int): Orden de diferenciación.
-            q (int): Orden del componente de media móvil (MA).
-            P (int): Orden del componente estacional autoregresivo (SAR).
-            D (int): Orden de diferenciación estacional.
-            Q (int): Orden del componente estacional de media móvil (SMA).
-            s (int): Período de estacionalidad.
-
+            df (pd.DataFrame): DataFrame containing the time series.
+            target (str): Name of the time series to be modeled (column name of the values).
+            p (int): Order of the autoregressive component (AR).
+            d (int): Order of differencing.
+            q (int): Order of the moving average component (MA).
+            P (int): Order of the seasonal autoregressive component (SAR).
+            D (int): Order of seasonal differencing.
+            Q (int): Order of the seasonal moving average component (SMA).
+            s (int): Seasonal period.
+    
         Returns:
-            result: Resultados del ajuste del modelo SARIMA.
-
+            result: Results of fitting the SARIMA model.
+    
         Examples:
-            # Ejemplo 1: Modelo ARIMA
+            # Example 1: ARIMA Model
             p, d, q, P, D, Q, s = 1, 1, 1, 0, 0, 0, 0
-            result = TS.modelo_sarima(df, "target", p, d, q, P, D, Q, s)
-
-            # Ejemplo 2: Modelo SARIMA con estacionalidad mensual en datos anuales
+            result = TS.sarima_model(df, "target", p, d, q, P, D, Q, s)
+    
+            # Example 2: SARIMA Model with monthly seasonality on annual data
             p, d, q, P, D, Q, s = 1, 1, 1, 1, 1, 1, 12
-            result = TS.modelo_sarima(df, "target", p, d, q, P, D, Q, s)
-
-            # Ejemplo 3: Modelo ARMA
+            result = TS.sarima_model(df, "target", p, d, q, P, D, Q, s)
+    
+            # Example 3: ARMA Model
             p, d, q, P, D, Q, s = 2, 0, 2, 0, 0, 0, 0
-            result = TS.modelo_sarima(df, "target", p, d, q, P, D, Q, s)
+            result = TS.sarima_model(df, "target", p, d, q, P, D, Q, s)
         """
-        serie = df[target]
-        model = SARIMAX(serie, order=(p, d, q), seasonal_order=(P, D, Q, s))
+        series = df[target]
+        model = SARIMAX(series, order=(p, d, q), seasonal_order=(P, D, Q, s))
         result = model.fit()
         return result
 
@@ -239,114 +239,112 @@ class TS:
 class Graphs_ts:
 
     @classmethod
-    def graficar_autocorrelacion(cls, df, value_col: str, lags=24, alpha=0.05) -> None:
+    def plot_autocorrelation(cls, df, value_col: str, lags=24, alpha=0.05) -> None:
         """
-        Visualiza gráficamente la función de autocorrelación y autocorrelación parcial.
-
+        Visualizes the autocorrelation and partial autocorrelation functions graphically.
+    
         Args:
-            df (pandas.DataFrame): DataFrame que contiene los datos de la serie temporal.
-            value_col (str): Nombre de la columna que contiene los valores a analizar.
-            lags (int, opcional): Número de retrasos (lags) para mostrar en las funciones de autocorrelación.
-                                  Por defecto es 24.
-            alpha (float): Nivel de significancia o al nivel de confianza de la prueba.
-
+            df (pandas.DataFrame): DataFrame containing time series data.
+            value_col (str): Name of the column containing the values to analyze.
+            lags (int, optional): Number of lags to show in the autocorrelation functions. Default is 24.
+            alpha (float): Significance level or confidence level for the test.
+    
         Returns:
             None
         """
         y = df[value_col]
         
-        # Crear la figura con subplots para ACF, PACF y SACF
+        # Create the figure with subplots for ACF, PACF, and SACF
         _, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(10, 16), dpi=100)
         
-        # Graficar la función de autocorrelación
+        # Plot the autocorrelation function
         plot_acf(y, lags=lags, ax=ax1, alpha=alpha)
-        ax1.set_title(f'Función de Autocorrelación para {value_col}')
+        ax1.set_title(f'Autocorrelation Function for {value_col}')
         
-        # Graficar la función de autocorrelación parcial
+        # Plot the partial autocorrelation function
         plot_pacf(y, lags=lags, ax=ax2, alpha=alpha, method='ywm')
-        ax2.set_title(f'Función de Autocorrelación Parcial para {value_col}')
+        ax2.set_title(f'Partial Autocorrelation Function for {value_col}')
         
-        # Realizar la diferenciación estacional
+        # Perform seasonal differencing
         seasonal_diff = y.diff(periods=12).dropna()
-
-        # Graficar la función de autocorrelación estacional
+    
+        # Plot the seasonal autocorrelation function
         plot_acf(seasonal_diff, lags=lags, ax=ax3, alpha=alpha)
-        ax3.set_title(f'Función de Autocorrelación Estacional para {value_col}')
-
-
-        # Graficar la función de autocorrelación parcial estacional
+        ax3.set_title(f'Seasonal Autocorrelation Function for {value_col}')
+    
+        # Plot the seasonal partial autocorrelation function
         seasonal_pacf = [pacf(y.diff(periods=i).dropna(), nlags=lags)[i] for i in range(1, lags + 1)]
         ax4.bar(range(1, len(seasonal_pacf) + 1), seasonal_pacf)
         ax4.set_xlabel('Lag')
         ax4.set_ylabel('SACF')
-        ax4.set_title(f'Función de Autocorrelación Parcial Estacional para {value_col}')
+        ax4.set_title(f'Seasonal Partial Autocorrelation Function for {value_col}')
         ax4.set_xticks(range(1, len(seasonal_pacf) + 1))
-
+    
         plt.tight_layout()
         plt.show()
 
     @classmethod
-    def graficar_estacionalidad_tendencia_ruido(cls, df, value_col: str, period=12, model='additive')->None:
+    def plot_seasonality_trend_residuals(cls, df, value_col: str, period=12, model='additive')->None:
         """
-        Visualiza la estacionalidad, tendencia y ruido en los datos utilizando la descomposición aditiva.
+        Visualizes seasonality, trend, and residuals in the data using additive decomposition.
 
         Args:
-            df (pandas.DataFrame): DataFrame que contiene los datos de la serie temporal.
-            value_col (str): Nombre de la columna que contiene los valores a analizar.
-            freq (int, opcional): Frecuencia de la estacionalidad en los datos. Por defecto es 12 para datos mensuales.
-            model (str, opcional): Modelo 'additive' o 'multiplicative'. Por defecto es additive
+            df (pandas.DataFrame): DataFrame containing time series data.
+            value_col (str): Name of the column containing the values to analyze.
+            period (int, optional): Frequency of seasonality in the data. Default is 12 for monthly data.
+            model (str, optional): Model 'additive' or 'multiplicative'. Default is additive.
 
         Returns:
             None
         """
         y = df[value_col]
-        
-        # Realizar la descomposición aditiva
+
+        # Perform additive decomposition
         result = seasonal_decompose(y, model=model, period=period)
-        
-        # Crear la figura con subplots para las componentes
+
+        # Create a figure with subplots for the components
         _, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(10, 12), dpi=100)
-        
-        # Graficar la serie original
+
+        # Plot the original series
         ax1.plot(y, label='Original', color='tab:blue')
-        ax1.set_ylabel('Valor')
+        ax1.set_ylabel('Value')
         ax1.legend()
-        
-        # Graficar la componente de tendencia
-        ax2.plot(result.trend, label='Tendencia', color='tab:orange')
-        ax2.set_ylabel('Tendencia')
+
+        # Plot the trend component
+        ax2.plot(result.trend, label='Trend', color='tab:orange')
+        ax2.set_ylabel('Trend')
         ax2.legend()
-        
-        # Graficar la componente de estacionalidad
-        ax3.plot(result.seasonal, label='Estacionalidad', color='tab:green')
-        ax3.set_ylabel('Estacionalidad')
+
+        # Plot the seasonal component
+        ax3.plot(result.seasonal, label='Seasonality', color='tab:green')
+        ax3.set_ylabel('Seasonality')
         ax3.legend()
-        
-        # Graficar la componente de residuo
-        ax4.plot(result.resid, label='Residuo', color='tab:red')
-        ax4.set_xlabel('Índice de tiempo')
-        ax4.set_ylabel('Residuo')
+
+        # Plot the residual component
+        ax4.plot(result.resid, label='Residual', color='tab:red')
+        ax4.set_xlabel('Time Index')
+        ax4.set_ylabel('Residual')
         ax4.legend()
-        
+
         plt.tight_layout()
         plt.show()
 
     @classmethod
-    def graficar_diagrama_caja(cls, df, time_col: str, value_col: str, group_by='year') -> None:
+    def plot_box_plot(cls, df, time_col: str, value_col: str, group_by='year') -> None:
         """
-        Genera y muestra diagramas de caja para visualizar los datos agrupados por año, mes o día.
+        Generates and displays box plots to visualize data grouped by year, month, day, etc.
 
         Args:
-            df (pandas.DataFrame): DataFrame que contiene los datos de la serie temporal.
-            time_col (str): Nombre de la columna que contiene las fechas a analizar.
-            value_col (str): Nombre de la columna que contiene los valores a analizar.
-            group_by (str, opcional): Opción para agrupar los datos ('year', 'month', 'day', etc.).
-                                      Por defecto es 'year' para visualizar por años.
+            df (pandas.DataFrame): DataFrame containing time series data.
+            time_col (str): Name of the column containing the dates to analyze.
+            value_col (str): Name of the column containing the values to analyze.
+            group_by (str, optional): Option for grouping the data ('year', 'month', 'day', etc.).
+                                      Default is 'year' to visualize by years.
 
         Returns:
             None
         """
-        translate = {'day':'dia','month':'mes','year':'año'}
+        translate = {'day': 'day', 'month': 'month', 'year': 'year'}
         if group_by == 'day':
             df['day'] = df[time_col].dt.day
             group_col = 'day'
@@ -354,35 +352,35 @@ class Graphs_ts:
             group_col = df[time_col].dt.__getattribute__(group_by)
 
         fig = px.box(df, x=group_col, y=value_col, color_discrete_sequence=px.colors.qualitative.Dark2,
-                    title=f'Diagrama de Caja - Por {translate[group_by].capitalize()}')
-        fig.update_layout(xaxis_title=translate[group_by].capitalize(), yaxis_title='Valor')
+                     title=f'Box Plot - By {translate[group_by].capitalize()}')
+        fig.update_layout(xaxis_title=translate[group_by].capitalize(), yaxis_title='Value')
         fig.show()
 
     @classmethod
-    def graficar_correlograma(cls, df, value='value', max_lag=10, title='Gráfico de correlograma'):
+    def plot_correlogram(cls, df, value='value', max_lag=10, title='Correlogram Plot'):
         """
-        Genera y muestra un gráfico de correlograma para una serie temporal.
+        Generates and displays a correlogram plot for a time series.
 
-        Parámetros:
-            df (pd.DataFrame): DataFrame que contiene la serie temporal.
-            value (str): Nombre de la columna que contiene los valores de la serie temporal.
-            max_lag (int): Número máximo de retrasos a considerar en el correlograma.
-            title (str): Título del gráfico.
+        Parameters:
+            df (pd.DataFrame): DataFrame containing the time series.
+            value (str): Name of the column containing the time series values.
+            max_lag (int): Maximum number of lags to consider in the correlogram.
+            title (str): Title of the plot.
 
-        Explicación:
-            El gráfico de correlograma muestra las correlaciones cruzadas entre diferentes
-            retrasos en la serie temporal. Ayuda a identificar patrones de dependencia entre
-            distintos retrasos. Los valores de correlación se encuentran en el rango [-1, 1].
-            Una correlación cercana a 1 indica una fuerte correlación positiva, mientras que
-            una correlación cercana a -1 indica una fuerte correlación negativa. Una correlación
-            cercana a 0 indica una correlación débil o nula.
+        Explanation:
+            The correlogram plot shows the cross-correlations between different
+            lags in the time series. It helps identify patterns of dependence between
+            different lags. Correlation values are in the range [-1, 1]. A correlation
+            close to 1 indicates a strong positive correlation, while a correlation
+            close to -1 indicates a strong negative correlation. A correlation close
+            to 0 indicates weak or no correlation.
 
-            Si hay valores significativamente diferentes de cero en los retrasos, podría
-            indicar una dependencia temporal en los datos. Si las correlaciones están cerca de
-            cero para la mayoría de los retrasos, podría indicar un proceso estocástico.
+            If there are significantly nonzero values at certain lags, it could
+            indicate temporal dependence in the data. If correlations are close to
+            zero for most lags, it could indicate a stochastic process.
 
-        Ejemplo:
-            Graphs.graficar_correlograma(df, value='value', max_lag=20, title='Correlograma de la Serie Temporal')
+        Example:
+            Graphs_ts.plot_correlogram(df, value='value', max_lag=20, title='Time Series Correlogram')
         """
         lags = list(range(1, max_lag + 1))
         correlations = [df[value].autocorr(lag) for lag in lags]
@@ -392,101 +390,105 @@ class Graphs_ts:
         fig.show()
 
     @classmethod
-    def graficar_profeta(cls, model, predict, graficar_componentes=False) -> None:
+    def plot_prophet(cls, model, forecast, plot_components=False) -> None:
         """
-        Genera y muestra gráficos interactivos relacionados con un modelo Prophet y sus predicciones.
+        Generates and displays interactive plots related to a Prophet model and its predictions.
 
-        Parámetros:
-            model: El modelo Prophet ajustado.
-            predict: Los resultados de las predicciones del modelo.
-            graficar_componentes (bool): El tipo de gráfico a mostrar. Opciones disponibles:
+        Parameters:
+            model: The fitted Prophet model.
+            forecast: The forecasted results from the model.
+            plot_components (bool): The type of plot to display. Available options:
+                - If True, it plots individual components (trend, seasonality, holidays).
+                - If False, it plots the main forecast.
+
+        Example:
+            Graphs.plot_prophet(prophet_model, forecast_result, plot_components=True)
         """
-        if graficar_componentes:
-            plot_components(model, predict)
+        if plot_components:
+            plot_components(model, forecast)
         else:
-            plot(model, predict)
+            plot(model, forecast)
         
 
-class Profeta:
+class Propheta:
 
     @classmethod
-    def cargar_modelo_prophet(cls, name_model='prophet_model'):
+    def load_prophet_model(cls, model_name='prophet_model'):
         """
-        Carga un modelo Prophet previamente guardado desde un archivo JSON.
+        Loads a previously saved Prophet model from a JSON file.
 
         Args:
-            name_model (str): Nombre del modelo prophet a cargar
+            model_name (str): Name of the Prophet model to load.
 
         Returns:
-            Prophet: El modelo Prophet cargado desde el archivo.
+            Prophet: The Prophet model loaded from the file.
         """
-        name = f'{name_model}.json'
-        with open(name, 'r') as fin:
-            model = model_from_json(fin.read())
+        filename = f'{model_name}.json'
+        with open(filename, 'r') as file:
+            model = model_from_json(file.read())
         return model
 
     @classmethod
-    def entrenar_modelo(cls, 
+    def train_prophet_model(cls,
             df: pd.DataFrame, 
             target: str, 
             dates: str, 
-            horizon = '30 days',
-            grid = False, 
-            parallel = None,
+            horizon='30 days',
+            grid=False, 
+            parallel=None,
             rolling_window=1,
-            save_model = False):
+            save_model=False):
         """
-        Entrena y ajusta un modelo Prophet para pronóstico de series temporales.
+        Train and fit a Prophet model for time series forecasting.
 
-        Parámetros:
-            df (pd.DataFrame): El DataFrame que contiene los datos de la serie temporal.
-            target (str): El nombre de la columna que contiene los valores objetivo.
-            dates (str): El nombre de la columna que contiene las fechas correspondientes.
-            horizon (str): La ventana de tiempo para la predicción futura. Por defecto es '30 days'. Opciones:
-                "days": Días.
-                "hours": Horas.
-                "minutes": Minutos.
-                "seconds": Segundos.
-                "months": Meses.
-                "years": Años.
-            grid (bool): Indica si se debe realizar una búsqueda de cuadrícula de hiperparámetros.
-            parallel: Opciones de paralelización para cross_validation. Opciones: 'processes', 'threads'.
-            rolling_window (int): Venta de datos que se analizan en cv. Defecto es 1.
-            save_model (bool): Indica si se debe guardar el modelo ajustado en formato JSON.
+        Parameters:
+            df (pd.DataFrame): The DataFrame containing the time series data.
+            target (str): The name of the column containing the target values.
+            dates (str): The name of the column containing the corresponding dates.
+            horizon (str): The time window for future prediction. Default is '30 days'. Options:
+                "days": Days.
+                "hours": Hours.
+                "minutes": Minutes.
+                "seconds": Seconds.
+                "months": Months.
+                "years": Years.
+            grid (bool): Whether to perform a hyperparameter grid search.
+            parallel: Parallelization options for cross_validation. Options: 'processes', 'threads'.
+            rolling_window (int): Size of data window to analyze in cv. Default is 1.
+            save_model (bool): Whether to save the fitted model in JSON format.
 
-        Retorna:
-            Prophet: El modelo Prophet ajustado.
+        Returns:
+            Prophet: The fitted Prophet model.
 
-        Ejemplo:
-            # Crear un DataFrame de ejemplo
+        Example:
+            # Create a sample DataFrame
             data = {
-                'fecha': pd.date_range(start='2023-01-01', periods=50, freq='D'),
-                'valor': range(50)
+                'date': pd.date_range(start='2023-01-01', periods=50, freq='D'),
+                'value': range(50)
             }
             df = pd.DataFrame(data)
 
-            # Entrenar el modelo Prophet
-            best_model = Profeta.entrenar_modelo(df, 'target', 'dates', grid=False, save_model=False)
+            # Train the Prophet model
+            best_model = ProphetModel.train_prophet_model(df, 'value', 'date', grid=False, save_model=False)
 
-            # Hacer predicciones con el modelo
+            # Make predictions with the model
             future = best_model.make_future_dataframe(periods=10)
             forecast = best_model.predict(future)
 
             print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(10))
-
         """
-        # Preparar los datos en el formato requerido por Prophet
+        # Prepare the data in the format required by Prophet
         df_prophet = df.rename(columns={target: 'y', dates: 'ds'})
 
-        # Definir la cuadrícula de parámetros para la búsqueda
+        # Define the parameter grid for hyperparameter tuning
         if grid:
             param_grid = {
                 'changepoint_prior_scale': [0.001, 0.01, 0.05, 0.1, 0.5],
                 'seasonality_prior_scale': [0.01, 0.1, 1.0, 10.0],
-                # Algunas opciones que pueden incluír:
-                #'holidays_prior_scale': [0.01, 10],
-                #'seasonality_mode': ['additive', 'multiplicative'],
-                #'changepoint_range': [0.8, 0.95]
+                # Additional options that can be included:
+                # 'holidays_prior_scale': [0.01, 10],
+                # 'seasonality_mode': ['additive', 'multiplicative'],
+                # 'changepoint_range': [0.8, 0.95]
             }
         else:
             param_grid = {
@@ -496,29 +498,26 @@ class Profeta:
 
         # Generate all combinations of parameters
         all_params = [dict(zip(param_grid.keys(), v)) for v in itertools.product(*param_grid.values())]
-        rmses = []  # Store the RMSEs for each params here
+        rmses = []  # Store the RMSEs for each set of parameters
 
-        # Use cross validation to evaluate all parameters
+        # Use cross-validation to evaluate all parameter combinations
         best_model = None
         for params in all_params:
-            model = Prophet(**params).fit(df_prophet)  # Fit model with given params
+            model = Prophet(**params).fit(df_prophet)  # Fit the model with the given parameters
             df_cv = cross_validation(model, horizon=horizon, parallel=parallel)
             df_p = performance_metrics(df_cv, rolling_window=rolling_window)
-            rmses.append(df_p['rmse'].values[0]) # type: ignore
-            if df_p['rmse'].values[0] <= min(rmses): # type: ignore
-                best_model = model
+            rmses.append(df_p['rmse'].values[0])  # Extract the RMSE value
+            if df_p['rmse'].values[0] <= min(rmses):
+                best_model = model  # Store the model with the lowest RMSE
 
-        # Find the best parameters
+        # Display tuning results
         tuning_results = pd.DataFrame(all_params)
         tuning_results['rmse'] = rmses
         print(tuning_results.sort_values(by=['rmse']))
 
-        #best_params = all_params[np.argmin(rmses)]
-        #print(best_params)
-
+        # Save the best model
         if save_model:
             with open('prophet_model.json', 'w') as fout:
-                fout.write(model_to_json(best_model))  # Save model
+                fout.write(model_to_json(best_model))  # Save the model
 
         return best_model
-

@@ -1,146 +1,159 @@
-[Proyecto en PyPi](https://pypi.org/project/ale-uy/)
-___
-## Modulo [eda.py](): Manipulación de Datos
+[PyPi Project](https://pypi.org/project/ale-uy/)
 
-Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipulaciones y visualizaciones de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento y limpieza de los datos.
+## Module [eda.py](): Data Manipulation
 
-### Métodos Disponibles
+The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulations and visualizations in a simple and efficient manner. These classes are designed to streamline various tasks related to data processing and cleaning.
 
-#### Preprocesamiento de Datos (EDA)
+### Available Methods
 
-1. `EDA.eliminar_unitarios(df)`: Elimina las variables que tienen un solo valor en un DataFrame.
+#### Data Preprocessing (EDA)
 
-2. `EDA.eliminar_nulos_si(df, p)`: Elimina las columnas con un porcentaje de valores nulos mayor o igual a `p` en un DataFrame.
+1. `EDA.remove_single_value_columns(df)`: Removes variables that have only one value in a DataFrame.
 
-3. `EDA.imputar_faltantes(df, metodo="mm")`: Imputa los valores faltantes en un DataFrame utilizando el método de la mediana para variables numéricas y el método de la moda para variables categóricas. También es posible utilizar el método de KNN (K-Nearest Neighbors) para imputar los valores faltantes.
+2. `EDA.remove_missing_if(df, p=0.5)`: Removes columns with a percentage of missing values greater than or equal to `p` in a DataFrame.
 
-4. `EDA.estandarizar_variables(df, metodo="zscore")`: Estandariza las variables numéricas en un DataFrame utilizando el método "z-score" (estandarización basada en la media y desviación estándar). Tambien estan disponibles otros metodos de estandarizacion 'minmax' y 'robust'
+3. `EDA.impute_missing(df, method="median", n_neighbors=None)`: Imputes missing values in a DataFrame using the median method for numerical variables and the mode method for categorical variables. The K-Nearest Neighbors (KNN) method can also be used to impute missing values.
 
-5. `EDA.balancear_datos(df, target)`: Realiza un muestreo aleatorio de los datos para balancear las clases en un problema de clasificación binaria. Esto ayuda a mitigar problemas de desequilibrio de clases en el conjunto de datos.
+4. `EDA.standardize_variables(df, target, method="zscore", cols_exclude=[])`: Standardizes numerical variables in a DataFrame using the "z-score" method (mean and standard deviation-based standardization). Other standardization methods such as 'minmax' and 'robust' are also available.
 
-6. `EDA.mezclar_datos(df)`: Mezcla los datos en el DataFrame de forma aleatoria, lo que puede ser útil para dividir los datos en conjuntos de entrenamiento y prueba.
+5. `EDA.balance_data(df, target, oversampling=True)`: Performs random sampling of data to balance classes in a binary classification problem. This helps mitigate class imbalance issues in the dataset.
 
-7. `EDA.estadisticos_numerico(df)`: Genera datos estadísticos de las variables numéricas en el DataFrame.
+6. `EDA.shuffle_data(df)`: Shuffles the data in the DataFrame randomly, which can be useful for splitting data into training and testing sets.
 
-8. `EDA.convertir_a_numericas(df, target, metodo="ohe")`: Realiza la codificación de variables categóricas utilizando diferentes métodos. Ademas de "ohe" (one-hot-encode) se puede seleccionar "dummy" y "label" (label-encode)
+7. `EDA.numeric_statistics(df)`: Generates statistical data for numerical variables in the DataFrame.
 
-9. `EDA.all_eda(...)`: Pipeline para realizar varios pasos (o todos) de la clase de forma automatica.
+8. `EDA.convert_to_numeric(df, target, method="ohe", drop_first=True)`: Performs categorical variable encoding using different methods. In addition to "ohe" (one-hot-encode), "dummy" and "label" (label-encode) methods can be selected.
 
-#### Visualización de Datos (Graphs_eda)
+9. `EDA.analyze_nulls(df)`: Returns the percentage of null values in the entire dataset for each column.
 
-10. `Graphs_eda.graficos_categoricos(df)`: Crea gráficos de barras horizontales para cada variable categórica en el DataFrame.
+10. `EDA.perform_full_eda(df, target, cols_exclude=[], p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline to perform various (or all) steps of the class automatically.
 
-11. `Graphs_eda.grafico_histograma(df, x)`: Genera un histograma interactivo para una columna específica del DataFrame.
+#### Data Visualization (Graphs_eda)
 
-12. `Graphs_eda.grafico_caja(df, x, y)`: Genera un gráfico de caja interactivo para una variable y en función de otra variable x.
+11. `Graphs_eda.categorical_plots(df)`: Creates horizontal bar charts for each categorical variable in the DataFrame.
 
-13. `Graphs_eda.grafico_dispersion(df, x, y)`: Genera un gráfico de dispersión interactivo para dos variables x e y.
+12. `Graphs_eda.histogram_plot(df, column)`: Generates an interactive histogram for a specific column in the DataFrame.
 
-14. `Graphs_eda.grafico_dendrograma(df)`: Genera un dendrograma que es útil para determinar el valor de k (grupos) para usar con la imputacion knn.
+13. `Graphs_eda.box_plot(df, column_x, column_y)`: Generates an interactive box plot for a variable y based on another variable x.
 
-## Modulo [ml.py](): Modelado de Datos
+14. `Graphs_eda.scatter_plot(df, column_x, column_y)`: Generates an interactive scatter plot for two variables, x and y.
 
-Las clases `ml.ML`, `ml.Graphs_ml` y `ml.Tools` son una herramienta para realizar modelados, manipulación y visualización de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento, entrenamiento y evaluación de modelos de aprendizaje automático.
+15. `Graphs_eda.hierarchical_clusters_plot(df, method='single', metric='euclidean', save_clusters=False)`: Generates a dendrogram that is useful for determining the value of k (clusters) in hierarchical clusters.
 
-### Modelado de Datos
-1. `ML.modelo_lightgbm(...)`: Utiliza LightGBM para predecir la variable objetivo en un DataFrame. Este método admite problemas de clasificación y regresión.
+16. `Graphs_eda.correlation_heatmap_plot(df)`: Generates a correlation heatmap for the given DataFrame.
 
-2. `ML.modelo_xgboost(...)`: Utiliza XGBoost para predecir la variable objetivo en un DataFrame. Este método también es adecuado para problemas de clasificación y regresión.
+## Module [ml.py](): Data Modeling
 
-3. `ML.modelo_catboost(...)`: Utiliza CatBoost para predecir la variable objetivo en un DataFrame. Al igual que los métodos anteriores, puede manejar problemas de clasificación y regresión.
+The classes `ml.ML`, `ml.Graphs_ml`, and `ml.Tools` are a tool for performing modeling, data manipulation, and visualization of data in a simple and efficient manner. These classes are designed to facilitate various tasks related to data processing, training, and evaluation of machine learning models.
 
-> *IMPORTANTE*: si se pasa como parametro ``grid=True`` a cualquiera de estos modelos (ejemplo: **model_catboost(..., grid=True...)**), ahora se realiza una busqueda de hiperparametros **aleatoria** para reducir los tiempos de entrenamiento; ademas podemos pasar ``n_iter=...`` con el numero que deseemos que el modelo pruebe de convinaciones diferentes de parametros (10 es la opcion por defecto).
+### Data Modeling
 
-#### Evaluación de Modelos
+1. `ML.lightgbm_model(...)`: Uses LightGBM to predict the target variable in a DataFrame. This method supports both classification and regression problems. You can see the customizable parameters within the docstring.
 
-5. **Metricas de Clasificación**: Calcula varias métricas de evaluación para un problema de clasificación, como *precisión*, *recall*, *F1-score* y área bajo la curva ROC (*AUC-ROC*).
+2. `ML.xgboost_model(...)`: Utilizes XGBoost to predict the target variable in a DataFrame. This method is also suitable for both classification and regression problems. You can find customizable parameters within the docstring.
 
-6. **Metricas de Regresión**: Calcula diversas métricas de evaluación para un problema de regresión, incluyendo el error cuadrático medio (MSE), el coeficiente de determinación (R-cuadrado ajustado), entre otros.
+3. `ML.catboost_model(...)`: Employs CatBoost to predict the target variable in a DataFrame. Similar to the previous methods, it can handle both classification and regression problems. You can explore the customizable parameters within the docstring.
 
-#### Selección de Variables y Clusters
+> *IMPORTANT*: If you pass `grid=True` as a parameter to any of these models (e.g: `model_catboost(grid=True,...)`), a **random** hyperparameter search is now conducted to reduce training times. Additionally, you can pass `n_iter=...` with the number you desire for the model to try different combinations of parameters (10 is the default option).
 
-7. `Tools.importancia_variables(...)`: Calcula la importancia de las variables en función de su contribución a la predicción, utiliza Bosque Aleatorio (RandomForest) con validacion cruzada. Utiliza un umbral que determina la importancia mínima requerida para mantener una variable o eliminarla.
+#### Model Evaluation
 
-8. `Tools.generar_clusters(df)`: Aplica el algoritmo no-supervisado K-Means o DBSCAN a un DataFrame y devuelve una serie con el número de cluster al que pertenece cada observación.
+5. **Classification Metrics**: Calculates various evaluation metrics for a classification problem, such as *precision*, *recall*, *F1-score*, and the area under the ROC curve (*AUC-ROC*).
 
-9. `Tools.generar_soft_clusters(df)`: Aplica Gaussian Mixture Models (GMM) al dataframe para generar una tabla con las probabilidades de pertencia de cada observacion al cluster especifico.
+6. **Regression Metrics**: Computes various evaluation metrics for a regression problem, including mean squared error (MSE), adjusted R-squared, among others.
 
-10. `Graphs_ml.plot_cluster(df)`: Gráfico de codo y silueta que es escencial para determinar el número de clusters óptimo a utilizar en los métodos de clusters anteriores.
+#### Variable Selection and Clustering
 
-## Modulo [ts.py](): Manipulación de Datos temporales
+7. `Tools.feature_importance(...)`: Calculates the importance of variables based on their contribution to prediction using Random Forest with cross-validation. It employs a threshold that determines the minimum importance required to retain or eliminate a variable. You can find customizable parameters within the docstring.
 
-Las clases `ts.Ts`, `ts.Graphs_ts` y `ts.Profeta` son una poderosa herramienta para realizar modelados, manipulación y visualización de datos temporales. Estas clases están diseñadas para facilitar diversas tareas relacionadas con los datos estadisticos de series temporales, asi como modelado y predicción de los mismo.
+8. `Tools.generate_clusters(...)`: Applies unsupervised algorithms K-Means or DBSCAN to a DataFrame and returns a series with the cluster number to which each observation belongs. You can explore customizable parameters within the docstring.
 
-### Métodos Disponibles
+9. `Tools.generate_soft_clusters(...)`: Applies Gaussian Mixture Models (GMM) to the DataFrame to generate a table with the probabilities of each observation belonging to a specific cluster. You can find customizable parameters within the docstring.
 
-#### Clase TS
-Cada método tiene su funcionalidad específica relacionada con el análisis y la manipulación de series temporales. Puede utilizar estos métodos para realizar diversas tareas en datos de series temporales, incluida la carga de datos, el análisis estadístico, las pruebas de estacionariedad, la descomposición, la diferenciación, la transformación y el modelado SARIMA.
+10. `Tools.split_and_convert_data(df, target, test_size=0.2, random_state=np.random.randint(1, 1000), encode_categorical=False)`: Divides data into training and testing sets and optionally encodes categorical variables.
 
-1. `TS.datos_estadisticos(...)`: Este método calcula varias propiedades estadísticas de una serie temporal, como media, mediana, desviación estándar, mínimo, máximo, percentiles, coeficiente de variación, asimetría y curtosis. Devuelve estas estadísticas como un diccionario.
-2. `TS.pruebas_raiz_unitaria(...)`: Este método realiza pruebas de raíz unitarias para determinar si una serie temporal es estacionaria. Admite tres pruebas diferentes: Augmented Dickey-Fuller (ADF), Kwiatkowski-Phillips-Schmidt-Shin (KPSS) y Phillips Perron (PP). Devuelve información de diagnóstico y, si es necesario, realiza la diferenciación para hacer que la serie sea estacionaria.
-3. `TS.aplicar_descomposicion(...)`: Este método aplica la descomposición estacional a una serie temporal, separándola en tendencia, estacionalidad y residuos. Puede especificar el tipo de descomposición (aditiva o multiplicativa) y el período estacional.
-4. `TS.aplicar_diferenciacion(...)`: Este método realiza la diferenciación en una serie temporal para hacerla estacionaria. Puede especificar el número de períodos que va a diferenciar.
-5. `TS.aplicar_transformacion(...)`: Este método aplica transformaciones a una serie temporal. Admite tres métodos de transformación: Box-Cox, Yeo-Johnson y logarítmica. Devuelve la serie temporal transformada.
-6. `TS.modelo_sarima(...)`: Este método se ajusta a un modelo ARIMA estacional (SARIMA) a una serie temporal. Puede especificar los órdenes de modelo para autorregresivo (AR), diferenciación (d), media móvil (MA), autorregresivo estacional (SAR), diferenciación estacional (D), promedio móvil estacional (SMA) y los períodos estacionales. Devuelve los resultados de la adaptación del modelo SARIMA.
+11. `Graphs_ml.plot_cluster(df, random_state=np.random.randint(1, 1000))`: Elbow and silhouette plot, which is essential for determining the optimal number of clusters to use in the aforementioned clustering methods.
 
-#### Clase Graphs_ts
-Estos métodos son útiles para explorar y comprender datos de series temporales, identificar patrones y evaluar supuestos de modelos. Para utilizar estos métodos, debe pasar un DataFrame pandas que contenga datos de series temporales y especificar las columnas y parámetros relevantes.
+## Module [ts.py](): Time Series Data Manipulation
 
-7. `Graphs_ts.graficar_autocorrelacion(...)`: Este método visualiza la función de autocorrelación (ACF), la función de autocorrelación parcial (PACF) y la ACF estacional de una serie temporal (Sacf y Spacf). Puede especificar el número de retrasos y el nivel de significación de las pruebas.
-8. `Graphs_ts.graficar_estacionalidad_tendencia_ruido(...)`:  Este método descompone una serie temporal en su tendencia, estacionalidad y componentes residuales utilizando un modelo aditivo o multiplicativo. A continuación, traza estos componentes junto con la serie temporal original.
-9. `Graphs_ts.graficar_diagrama_caja(...)`: Este método genera y muestra diagramas de caja para visualizar datos agrupados por año, mes, día, etc. Puede especificar la columna de tiempo, la columna de valor y la opción de agrupación.
-10. `Graphs_ts.graficar_correlograma(...)`: Este método crea y muestra un correlograma (gráfico de autocorrelación) para una serie temporal. Ayuda a identificar correlaciones entre diferentes retrasos en la serie.
-11. `Graphs_ts.graficar_profeta(...)`: Este método genera gráficos relacionados con un modelo de Profeta y sus predicciones. Puede elegir visualizar los componentes (tendencia, estacionalidad) o toda la predicción.
+The classes `ts.Ts`, `ts.Graphs_ts`, and `ts.Propheta` are powerful tools for performing modeling, manipulation, and visualization of time series data. These classes are designed to facilitate various tasks related to statistical time series data, as well as modeling and prediction.
 
-#### Clase Profeta:
-12. `Profeta.cargar_modelo_prophet(...)`: Este método carga un modelo de Prophet guardado previamente desde un archivo JSON. Puede especificar el nombre del archivo del modelo que se va a cargar.
-13. `Profeta.entrenar_modelo(...)`: Este método entrena y ajusta un modelo de Profeta para el pronóstico de series temporales.
+### Available Methods
 
-## Instalación
+#### TS Class
+Each method has its specific functionality related to the analysis and manipulation of time series data. You can use these methods to perform various tasks on time series data, including data loading, statistical analysis, stationarity tests, decomposition, differencing, transformation, and SARIMA modeling.
 
-Para utilizar las clases `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, `Tools`, simplemente importa la clase en tu código (primero instalar con pip ``pip install ale-uy``):
+1. `TS.statistical_data(df, target)`: This method calculates various statistical properties of a time series, such as mean, median, standard deviation, minimum, maximum, percentiles, coefficient of variation, skewness, and kurtosis. It returns these statistics as a dictionary.
+
+2. `TS.unit_root_tests(df, target, test='adf', alpha="5%")`: This method performs unit root tests to determine if a time series is stationary. It supports three different tests: Augmented Dickey-Fuller (ADF), Kwiatkowski-Phillips-Schmidt-Shin (KPSS), and Phillips Perron (PP). It returns diagnostic information and, if necessary, performs differencing to make the series stationary.
+
+3. `TS.apply_decomposition(df, target, seasonal_period, model='additive')`: This method applies seasonal decomposition to a time series, separating it into trend, seasonality, and residuals. You can specify the type of decomposition (additive or multiplicative) and the seasonal period.
+
+4. `TS.apply_differencing(df, target, periods=1)`: This method performs differencing on a time series to make it stationary. You can specify the number of periods to difference.
+
+5. `TS.apply_transformation(df, target, method='box-cox')`: This method applies transformations to a time series. It supports three transformation methods: Box-Cox, Yeo-Johnson, and logarithmic. It returns the transformed time series.
+
+6. `TS.sarima_model(df, target, p=0, d=0, q=0, P=0, D=0, Q=0, s=0)`: This method fits an ARIMA model to a time series by specifying the orders of the autoregressive (AR), differencing (d), and moving average (MA) components. It can also fit a SARIMA model by modifying the other four parameters: seasonal autoregressive order (P), seasonal differencing (D), seasonal moving average (Q), and seasonal periods (s). It returns the results of fitting the ARIMA/SARIMA model.
+
+#### Class Graphs_ts
+These methods are useful for exploring and understanding time series data, identifying patterns, and evaluating model assumptions. To use these methods, you should pass a pandas DataFrame containing time series data and specify the relevant columns and parameters.
+
+7. `Graphs_ts.plot_autocorrelation(df, value_col, lags=24, alpha=0.05)`: This method visualizes the autocorrelation function (ACF), partial autocorrelation function (PACF), and seasonal ACF of a time series (SACF and SPACF). You can specify the number of lags and the significance level of the tests.
+8. `Graphs_ts.plot_seasonality_trend_residuals(df, value_col, period=12, model='additive')`: This method decomposes a time series into its trend, seasonality, and residual components using an additive or multiplicative model. It then plots these components along with the original time series.
+9. `Graphs_ts.plot_box_plot(df, time_col, value_col, group_by='year')`: This method generates and displays box plots to visualize data grouped by year, month, day, etc. You can specify the time column, value column, and grouping option.
+10. `Graphs_ts.plot_correlogram(df, value='value', max_lag=10, title='Correlogram Plot')`: This method creates and displays a correlogram (autocorrelation plot) for a time series. It helps identify correlations between different lags in the series.
+11. `Graphs_ts.plot_prophet(model, forecast, plot_components=False)`: This method generates charts related to a Prophet model and its predictions. You can choose to visualize the components (trend, seasonality) or the entire forecast.
+
+#### Class Propheta:
+12. `Propheta.load_prophet_model(model_name='prophet_model')`: This method loads a previously saved Prophet model from a JSON file. You can specify the name of the model file to load.
+13. `Propheta.train_prophet_model(...)`: This method trains and fits a Prophet model for time series forecasting. You can customize the parameters as described in the docstring.
+
+## Install
+
+To use the classes `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, and `Tools`, simply import the class in your code (first install with pip `pip install ale-uy`):
 
 ```python
 from ale_uy.eda import EDA, Graphs_eda
 from ale_uy.ml import ML, Tools, Graphs_ml
-from ale_uy.ts import TS, Graphs_ts, Profeta
+from ale_uy.ts import TS, Graphs_ts, Propheta
 ```
 
-## Ejemplo de Uso
-Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (IMPORTANTE: Colocar la carpeta **`ale_uy/`** con sus correspondientes archivos **[eda.py]()**, **[ts.py]()** y **[ml.py]()** en la carpeta donde estes trabajando, si es que no instalaste via pip (``pip install ale-uy``)):
+## Usage Example
+Here's an example of how to use the **EDA** and **ML** classes to preprocess data and train a LightGBM model for a binary classification problem (IMPORTANT: Place the **`ale_uy/`** folder with its corresponding **[eda.py]()**, **[ts.py]()**, and **[ml.py]()** files in the working directory if you didn't install via pip (`pip install ale-uy`)):
 
 ```python
-# Importar los modulos ml y eda con sus respectivas clases
+# Import the ml and eda modules with their respective classes
 from ale_uy.ml import ML, Tools, Graphs_ml
 
 from ale_uy.eda import EDA, Graphs_eda
 
-# Cargar los datos en un DataFrame
-data = pd.read_csv(...)  # Tu DataFrame con los datos
+# Load the data into a DataFrame
+data = pd.read_csv(...)  # Your DataFrame with the data
 
-# Preprocesamiento de datos con la viariable objetivo llamada 'target'
-preprocessed_data = EDA.all_eda(data, target='target')
+# Data preprocessing with the target variable named 'target'
+preprocessed_data = EDA.perform_full_eda(data, target='target')
 
-# Entrenar el modelo LightGBM de clasificación y obtener sus metricas
-ML.modelo_lightgbm(preprocessed_data, target='target', tipo_problema='clasificacion')
+# Train the LightGBM classification model and obtain its metrics
+ML.lightgbm_model(preprocessed_data, target='target', problem_type='classification')
 
-# Si el modelo se adapta a nuestras necesidades, podemos guardarlo simplemente agregando el atributo 'save_model=True'
-ML.modelo_lightgbm(preprocessed_data, target='target', tipo_problema='clasificacion', save_model=True)
-# Se guardara como "lightgbm.pkl"
+# If the model fits our needs, we can simply save it by adding the 'save_model=True' attribute
+ML.lightgbm_model(preprocessed_data, target='target', problem_type='classification', save_model=True)
+# It will be saved as "lightgbm.pkl"
 ```
-Para usar el modelo guardado con nuevos datos, usaremos el siguiente codigo
+To use the saved model with new data, we will use the following code
 ```python
+
 import joblib
 
-# Ruta y nombre del archivo donde se guardó el modelo
-model_filename = "nombre_del_archivo.pkl"
-# Cargar el modelo
+# File path and name where the model was saved
+model_filename = "model_filename.pkl"
+# Load the model
 loaded_model = joblib.load(model_filename)
-# Ahora puedes utilizar el modelo cargado para hacer predicciones
-# Supongamos que tienes un conjunto de datos 'X_test' para hacer predicciones
+# Now you can use the loaded model to make predictions
+# Suppose you have a dataset 'X_test' for making predictions
 y_pred = loaded_model.predict(X_test)
 ```
-## Contribución
-Si encuentras algún problema o tienes ideas para mejorar estas clases, ¡no dudes en contribuir! Puedes hacerlo enviando pull requests o abriendo issues en el [Repositorio del Proyecto](https://github.com/ale-uy/DataScience).
+## Contribution
+If you encounter any issues or have ideas to improve these classes, please feel free to contribute! You can do so by submitting pull requests or opening issues on the [Project Repository](https://github.com/ale-uy/DataScience).
 
-¡Gracias por tu interés! Espero que sea una herramienta útil para tus proyectos de aprendizaje automático. Si tienes alguna pregunta o necesitas ayuda, no dudes en preguntar. ¡Buena suerte en tus proyectos de ciencia de datos y aprendizaje automático!
+Thank you for your interest! I hope it proves to be a useful tool for your machine learning projects. If you have any questions or need assistance, don't hesitate to ask. Good luck with your data science and machine learning endeavors!

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Autor: ale-uy
-Fecha: 05/2023
-Actualizado: 09/2023
+Author: ale-uy
+Date: 05/2023
+Updated: 09/2023
 Version: v2
-Archivo: eda_vx.py
-Descripción: Automatizar procesos de analisis y limpieza dn datos
-Licencia: Apache License Version 2.0
+File: eda.py
+Description: Automate data analysis and cleaning processes
+License: Apache License Version 2.0
 """
 
 import pandas as pd
@@ -24,438 +24,446 @@ from imblearn.over_sampling import SMOTENC
 class Eda:
 
     @classmethod
-    def analizar_nulos(cls, df)->None:
+    def analyze_nulls(cls, df: pd.DataFrame) -> None:
         """
-        Devuelve el porcentaje de valores nulos en el total de datos para cada columna.
-        Devuelve:
-            Series: Una serie que contiene los porcentajes de valores nulos para cada columna,
-                    ordenados de mayor a menor.
+        Returns the percentage of null values in the entire dataset for each column.
+        Returns:
+            Series: A series containing the percentages of null values for each column,
+                    sorted from highest to lowest.
         """
         print(df.isna().sum().sort_values(ascending=False) / df.shape[0] * 100)
 
     @classmethod
-    def estadisticos_numericos(cls, df)->None:
+    def numeric_statistics(cls, df: pd.DataFrame) -> None:
         """
-        Genera datos estadísticos de las variables numéricas en el DataFrame.
+        Generates statistical data for numeric variables in the DataFrame.
         Returns:
-            DataFrame: Un DataFrame que contiene los estadísticos de las variables numéricas,
-                       incluyendo count, mean, std, min, 25%, 50%, 75% y max.
+            DataFrame: A DataFrame containing statistics for numeric variables,
+                       including count, mean, std, min, 25%, 50%, 75%, and max.
         """
         print(df.select_dtypes('number').describe().T)
 
     @classmethod
-    def convertir_a_numericas(cls, df, target:str, metodo="ohe", drop_first=True):
+    def convert_to_numeric(cls, df: pd.DataFrame, target: str, method="ohe", drop_first=True):
         """
-        Realiza la codificación de variables categóricas utilizando diferentes métodos.
-        Parámetros:
-            df (pandas DataFrame): El DataFrame que contiene las variables a codificar.
-            target (str): El nombre de la columna objetivo que no se codificará.
-            metodo (str): El método de codificación a utilizar. Opciones válidas:
-                - "dummy": Codificación dummy.
-                - "ohe": OneHotEncoding.
+        Performs the encoding of categorical variables using different methods.
+        Parameters:
+            df (pandas DataFrame): The DataFrame containing the variables to be encoded.
+            target (str): The name of the target column that will not be encoded.
+            method (str): The encoding method to use. Valid options:
+                - "dummy": Dummy encoding.
+                - "ohe": One-Hot Encoding.
                 - "label": LabelEncoder.
-            drop_first (bool): Elimina la primer dummy en caso de utilizar "dummy". Por defecto es True.
-        Retorna:
-            pandas DataFrame: El DataFrame original con las columnas categóricas codificadas, excluyendo la columna objetivo.
+            drop_first (bool): Drops the first dummy when using "dummy" encoding. Default is True.
+        Returns:
+            pandas DataFrame: The original DataFrame with the categorical columns encoded, excluding the target column.
         """
 
-        # Separamos la columna objetivo 'y' del resto del conjunto de datos 'X'
+        # Separate the target column 'y' from the rest of the dataset 'X'
         y = df[target]
         if not np.issubdtype(y.dtype, np.number):
-            # Si y no es numérica, la convertimos utilizando LabelEncoder
+            # If 'y' is not numeric, convert it using LabelEncoder
             label_encoder = LabelEncoder()
             y_encoded = label_encoder.fit_transform(df[target])
-            y = pd.Series(y_encoded, name=target) # type: ignore
+            y = pd.Series(y_encoded, name=target)  # type: ignore
         X = df.drop(target, axis=1)
 
-        # Utilizamos los metodos
-        if metodo == "dummy":
+        # Use the specified encoding method
+        if method == "dummy":
             """
-            Realiza la codificación dummies a variables categóricas del DataFrame.
-            Parámetros:
-                df (pandas DataFrame): El DataFrame que contiene las variables categóricas.
-                target (str): El nombre de la columna objetivo que no se codificará.
-                drop_first (bool): Elimina la primer dummy. Por defecto es True
-            Retorna:
-                pandas DataFrame: El DataFrame original con las columnas categóricas codificadas mediante
-                el método dummies, excluyendo la columna objetivo.
+            Performs dummy encoding on categorical variables in the DataFrame.
+            Parameters:
+                df (pandas DataFrame): The DataFrame containing the categorical variables.
+                target (str): The name of the target column that will not be encoded.
+                drop_first (bool): Drops the first dummy. Default is True.
+            Returns:
+                pandas DataFrame: The original DataFrame with the categorical columns encoded using
+                the dummy method, excluding the target column.
             """
-            # Convierto a dummy
+            # Convert to dummy
             X = pd.get_dummies(X, drop_first=drop_first)
-            # Unir el DataFrame imputado con las columnas categóricas codificadas al DataFrame 'Xy'
-            df_codificado = pd.concat([X, y], axis=1)
-        elif metodo == "ohe":
+            # Concatenate the imputed DataFrame with the encoded categorical columns to DataFrame 'Xy'
+            encoded_df = pd.concat([X, y], axis=1)
+        elif method == "ohe":
             """
-            Este método realiza el OneHotEncoding para todas las columnas categóricas en el DataFrame, 
-            excepto para la columna especificada como 'target', que se considera la variable
-            objetivo y no se codificará. Las columnas categóricas se identifican automáticamente en
-            función de su tipo de datos 'object'.
-            Retorna:
-                pandas DataFrame: El DataFrame original con las columnas categóricas codificadas mediante
-                el método OneHotEncoding, excluyendo la columna objetivo.
+            This method performs One-Hot Encoding for all categorical columns in the DataFrame, 
+            except for the column specified as 'target', which is considered the target
+            variable and will not be encoded. Categorical columns are automatically identified based on their 'object' data type.
+            Returns:
+                pandas DataFrame: The original DataFrame with the categorical columns encoded using
+                One-Hot Encoding, excluding the target column.
             """
-            # Crear el codificador OneHotEncoder con la opción 'drop' establecida en 'first' \
-            # para evitar la trampa de la codificación (colinealidad).
+            # Create the OneHotEncoder with 'drop' option set to 'first' to avoid the dummy variable trap (collinearity).
             encoder = OneHotEncoder(sparse_output=False, drop='first')
-            # Obtener las columnas categóricas a codificar automáticamente en función de su tipo de datos 'object'
+            # Get automatically identified categorical columns based on their 'object' data type
             object_columns = X.select_dtypes(include=['object']).columns
-            # Aplicar OneHotEncoding a las columnas categóricas seleccionadas y generar un nuevo DataFrame
-            X_encoded = pd.DataFrame(encoder.fit_transform(X[object_columns]))
-            # Asignar nombres de columnas al nuevo DataFrame basados en los nombres de las características originales
-            X_encoded.columns = encoder.get_feature_names_out(object_columns)
-            # Descartar las columnas categóricas originales del DataFrame 'X'
+            # Apply One-Hot Encoding to the selected categorical columns and generate a new DataFrame
+            encoded_df = pd.DataFrame(encoder.fit_transform(X[object_columns]))
+            # Assign column names to the new DataFrame based on the original feature names
+            encoded_df.columns = encoder.get_feature_names_out(object_columns)
+            # Drop the original categorical columns from DataFrame 'X'
             X = X.drop(object_columns, axis=1).reset_index(drop=True)
-            # Restablecer el índice de X y X_encode para que comience desde 1 en lugar de 0
-            X.index = y.index # SOLUCION PROVISORIA #
-            X_encoded.index = y.index # SOLUCION PROVISORIA #
-            # Unir el DataFrame imputado con las columnas categóricas codificadas al DataFrame 'Xy'
-            df_codificado = pd.concat([X, X_encoded, y], axis=1)
-        elif metodo == "label":
+            # Reset the index of X and encoded_df to start from 1 instead of 0
+            X.index = y.index  # TEMPORARY SOLUTION #
+            encoded_df.index = y.index  # TEMPORARY SOLUTION #
+            # Concatenate the imputed DataFrame with the encoded categorical columns to DataFrame 'Xy'
+            encoded_df = pd.concat([X, encoded_df, y], axis=1)
+        elif method == "label":
             """
-            Realiza la codificación de variables categóricas utilizando LabelEncoder.
-            Retorna:
-                pandas DataFrame: El DataFrame original con las columnas categóricas codificadas
-                mediante LabelEncoder, INCLUYENDO la columna objetivo.
+            Performs the encoding of categorical variables using LabelEncoder.
+            Returns:
+                pandas DataFrame: The original DataFrame with the categorical columns encoded
+                using LabelEncoder, INCLUDING the target column.
             """
-            # Creamos el DataFrame auxiliar 'X'
-            df_codificado = df.copy(deep=True)
-            # Obtener las columnas categóricas a codificar automáticamente en función de su tipo de datos 'object'
-            object_columns = df_codificado.select_dtypes(include=['object']).columns
-            # Crear un objeto LabelEncoder para cada columna categórica y transformar los datos
+            # Create a copy of the DataFrame 'df' for encoding
+            encoded_df = df.copy(deep=True)
+            # Get automatically identified categorical columns based on their 'object' data type
+            object_columns = encoded_df.select_dtypes(include=['object']).columns
+            # Create a LabelEncoder object for each categorical column and transform the data
             label_encoders = {col: LabelEncoder() for col in object_columns}
             for col in object_columns:
-                df_codificado[col] = label_encoders[col].fit_transform(df_codificado[col])
+                encoded_df[col] = label_encoders[col].fit_transform(encoded_df[col])
         else:
-            raise ValueError("El parámetro 'metodo' debe ser uno de: 'dummy', 'ohe', 'label'.")
-        # Regresar el DataFrame 'df_codificado' completo con las columnas categóricas codificadas
-        return df_codificado
-        
+            raise ValueError("The 'method' parameter must be one of: 'dummy', 'ohe', 'label'.")
+        # Return the complete 'encoded_df' DataFrame with the encoded categorical columns
+        return encoded_df
+
     @classmethod
-    def eliminar_nulos_si(cls, df, p=0.5):
+    def remove_missing_if(cls, df:pd.DataFrame, p=0.5):
         """
-        Elimina las columnas que tienen un porcentaje mayor o igual a p de valores nulos.
+        Deletes columns that have a percentage greater than or equal to p of null values.
         Parameters:
-            p (float): Porcentaje límite para considerar una columna con valores nulos.
-                       Por defecto es 0.5 (50%).
+            p (float): The threshold percentage to consider a column with null values.
+                       Default is 0.5 (50%).
         """
+
         nan_percentages = df.isna().mean()
         columns_to_drop = nan_percentages[nan_percentages >= p].index
         aux = df.drop(columns=columns_to_drop)
         return aux
 
     @classmethod
-    def imputar_faltantes(cls, df, metodo="mm", n_neighbors=None):
+    def impute_missing(cls, df:pd.DataFrame, method='mm', n_neighbors=None):
         """
-        Imputa los valores faltantes en un DataFrame utilizando diferentes métodos.
-        Parámetros:
-            df (pandas DataFrame): El DataFrame que contiene los valores faltantes.
-            metodo (str, optional): El método de imputación a utilizar. Opciones válidas: "mm" (por defecto) o "knn".
-            n_neighbors (int, optional): El número de vecinos más cercanos a utilizar en el método KNNImputer.
-                                         Solo aplicable si el método es "knn".
-        Retorna:
-            pandas DataFrame: El DataFrame original con los valores faltantes imputados.
-        Método "mm" (Mediana/Moda):
-            - Imputa el valor de la mediana a los valores faltantes en variables numéricas.
-            - Imputa la moda en variables categóricas.
-        Método "knn" (K-Nearest Neighbors):
-            - Imputa los valores faltantes utilizando KNNImputer, un método basado en vecinos más cercanos.
-        Ejemplo de uso:
-            df_imputado = Eda.imputar_faltantes(df, metodo="knn", n_neighbors=5)
+        Imputes missing values in a DataFrame using different methods.
+        Parameters:
+            df (pandas DataFrame): The DataFrame containing missing values.
+            method (str, optional): The imputation method to use: Default method 'mm'.
+                Default method is "mm" (Median/Mode):
+                    - Imputes the median value for missing values in numeric variables.
+                    - Imputes the mode for categorical variables.
+                Method "knn" (K-Nearest Neighbors):
+                    - Imputes missing values using KNNImputer, a nearest neighbors-based method.
+            n_neighbors (int, optional): The number of nearest neighbors to use in the KNNImputer method.
+                                         Only applicable if the method is "knn".
+        Returns:
+            pandas DataFrame: The original DataFrame with missing values imputed.
+            
+        Usage Example:
+            imputed_df = Eda.impute_missing(df, method="knn", n_neighbors=5)
         """
-        if metodo == "mm":
-            """
-            Imputa el valor de la mediana a los valores nulos en variables numéricas
-            y la moda en variables categóricas.
-            """
-            df_imputed = df.copy(deep=True)
-            for col in df_imputed.columns:
-                if df_imputed[col].dtype == 'object':
-                    # Imputa la moda a los valores nulos en una columna categórica.
-                    mode = df_imputed[col].mode()[0]
-                    df_imputed[col].fillna(mode, inplace=True)
-                else:
-                    # Imputa la mediana a los valores nulos en una columna numérica.
-                    median = df_imputed[col].median()
-                    df_imputed[col].fillna(median, inplace=True)
-        elif metodo == "knn":
+        if method == 'knn':
             if n_neighbors is None:
-                # Realizar búsqueda de validación cruzada para encontrar el mejor valor de n_neighbors
-                param_grid = {'n_neighbors': [i for i in range(3,16)]}  # Valores de n_neighbors a probar
+                # Perform cross-validation search to find the best value of n_neighbors
+                param_grid = {'n_neighbors': [i for i in range(3, 16)]}  # Values of n_neighbors to try
                 knn_imputer = KNNImputer()
                 grid_search = RandomizedSearchCV(knn_imputer, param_grid, cv=3, n_iter=6)
                 grid_search.fit(df)
                 n_neighbors_best = grid_search.best_params_['n_neighbors']
-                print(f"Mejor valor de n_neighbors encontrado: {n_neighbors_best}")
+                print(f"Best value of n_neighbors found: {n_neighbors_best}")
             else:
                 n_neighbors_best = n_neighbors
-            
-            # Imputar los valores faltantes utilizando KNNImputer con el mejor valor de n_neighbors
+
+            # Impute missing values using KNNImputer with the best n_neighbors value
             knn_imputer = KNNImputer(n_neighbors=n_neighbors_best)
             df_imputed = knn_imputer.fit_transform(df)
             df_imputed = pd.DataFrame(df_imputed, columns=df.columns)
+        elif method == 'mm':
+            """
+            Impute the median value for missing values in numeric variables
+            and the mode for categorical variables.
+            """
+            df_imputed = df.copy(deep=True)
+            for col in df_imputed.columns:
+                if df_imputed[col].dtype == 'object':
+                    # Impute mode for missing values in a categorical column.
+                    mode = df_imputed[col].mode()[0]
+                    df_imputed[col].fillna(mode, inplace=True)
+                else:
+                    # Impute median for missing values in a numeric column.
+                    median = df_imputed[col].median()
+                    df_imputed[col].fillna(median, inplace=True)
         else:
-            raise ValueError("El parámetro 'metodo' debe ser uno de: 'mm', 'knn'.")
+            raise ValueError('methods options: "mm" and "knn"')
         return df_imputed
         
     @classmethod
-    def eliminar_unitarios(cls, df):
+    def remove_single_value_columns(cls, df:pd.DataFrame):
         """
-        Elimina las variables que tienen un solo valor.
+        Remove variables that have only one unique value
         """
         columns_to_drop = [col for col in df.columns if df[col].nunique() == 1]
         df_copy = df.drop(columns=columns_to_drop)
         return df_copy
     
     @classmethod
-    def mezclar_datos(cls, df):
+    def shuffle_data(cls, df:pd.DataFrame):
         """
-        Mezcla los datos en el DataFrame de forma aleatoria.
-        Parámetros:
-            df (pandas DataFrame): El DataFrame con los datos a mezclar.
-        Retorna:
-            pandas DataFrame: Un nuevo DataFrame con las filas mezcladas de manera aleatoria.
+        Randomly shuffles the data in the DataFrame.
+        Parameters:
+            df (pandas DataFrame): The DataFrame with the data to shuffle.
+        Returns:
+            pandas DataFrame: A new DataFrame with rows randomly shuffled.
         """
         shuffled_df = df.sample(frac=1, random_state=np.random.randint(1, 1000))
         return shuffled_df
     
     @classmethod
-    def estandarizar_variables(cls, df, target:str, metodo="zscore"):
+    def standardize_variables(cls, df: pd.DataFrame, target: str, method="zscore", cols_exclude=[]):
         """
-        Estandariza las variables numéricas en un DataFrame utilizando el método especificado.
-        Parámetros:
-            df (pandas DataFrame): El DataFrame que contiene las variables a estandarizar.
-            metodo (str): El método de estandarización a utilizar. Opciones válidas:
-                - 'zscore': Estandarización utilizando el Z-Score (media 0, desviación estándar 1).
-                - 'minmax': Estandarización utilizando Min-Max (rango 0 a 1).
-                - 'robust': Estandarización robusta utilizando medianas y cuartiles.
+        Standardizes numeric variables in a DataFrame using the specified method.
+        Parameters:
+            df (pandas DataFrame): The DataFrame containing the variables to standardize.
+            method (str): The standardization method to use. Valid options:
+                - 'zscore': Standardization using Z-Score (mean 0, standard deviation 1).
+                - 'minmax': Standardization using Min-Max (range 0 to 1).
+                - 'robust': Robust standardization using medians and quartiles.
                 Default = zscore
-        Retorna:
-            pandas DataFrame: El DataFrame original con las variables numéricas estandarizadas.
+            cols_exclude (list, optional): Columns that we do not want to transform.
+        Returns:
+            pandas DataFrame: The original DataFrame with standardized numeric variables.
         """
-        y= df[target]
-        aux = df.drop(target, axis=1)
-        if metodo == 'zscore':
+        cols_exclude.append(target)
+        y = df[cols_exclude]
+        aux = df.drop(columns=cols_exclude, axis=1)
+        if method == 'zscore':
             scaler = StandardScaler()
-        elif metodo == 'minmax':
+        elif method == 'minmax':
             scaler = MinMaxScaler()
-        elif metodo == 'robust':
+        elif method == 'robust':
             scaler = RobustScaler()
         else:
-            raise ValueError("El parámetro 'metodo' debe ser uno de: 'zscore', 'minmax', 'robust'.")
+            raise ValueError("The 'method' parameter must be one of: 'zscore', 'minmax', 'robust'.")
         aux[aux.select_dtypes(include='number').columns] = scaler.fit_transform(aux.select_dtypes(include='number'))
         aux = pd.concat([aux, y], axis=1)
         return aux
     
     @classmethod
-    def balancear_datos(cls, df, target:str, undersampling=True):
+    def balance_data(cls, df: pd.DataFrame, target: str, oversampling=True):
         """
-        Equilibra un conjunto de datos desequilibrado en una tarea 
-        de clasificación mediante el método de sobre muestreo.
-        Parámetros:
-            df (pandas DataFrame): El DataFrame que contiene las variables de entrada y la variable objetivo.
-            target (str): El nombre de la columna que contiene la variable objetivo.
-            undersampling (bool): realiza un undersampling si True (defecto), en False utiliza algoritmo /
-            "SMOTENC" para generar oversampling.
-        Retorna:
-            pandas.DataFrame
-        Ejemplo:
-            # Supongamos que tenemos un DataFrame df con clases desequilibradas
-            # y queremos equilibrar las clases utilizando el método de sobre muestreo:
-            df_balanced = Eda.balancear_datos(df, 'variable_objetivo')
+        Balances an imbalanced dataset in a classification task using the oversampling method.
+        Parameters:
+            df (pandas DataFrame): The DataFrame containing input variables and the target variable.
+            target (str): The name of the column containing the target variable.
+            oversampling (bool, optional): Uses the "SMOTENC" algorithm for oversampling if True (default), 
+                if False, uses undersampling.
+        Returns:
+            pandas DataFrame
+        Example:
+            # Suppose we have a DataFrame df with imbalanced classes
+            # and we want to balance the classes using the oversampling method:
+            df_balanced = Eda.balance_data(df, 'target_variable')
         """
-        if undersampling:
-            df_no = df[df[target] == 0]
-            df_yes = df[df[target] == 1]
-            df_no_reduced = df_no.sample(df_yes.shape[0],random_state=1)
-            df_balanced = pd.concat([df_no_reduced,df_yes],axis=0)
-            df_balanced = df_balanced.sample(frac=1,random_state=1)
-        else:
-            raise NotImplemented('Metodo no implementado, utilizar "undesampling=True"')
-            # Separa las características y la columna objetivo (target)
+        if oversampling:
+            # Separate features and target column
             X = df.drop(columns=[target])
             y = df[target]
 
-            # Encuentra las columnas numéricas y categóricas
-            # numerical_cols = X.select_dtypes(include=['number']).columns
+            # Find numerical and categorical columns
             categorical_cols = X.select_dtypes(exclude=['number']).columns
 
-            # Crea una instancia de SMOTE-NC
+            # Create an instance of SMOTE-NC
             smote_nc = SMOTENC(categorical_features=[X.columns.get_loc(col) for col in categorical_cols])
 
-            # Aplica SMOTE-NC para generar nuevas muestras
+            # Apply SMOTE-NC to generate synthetic samples
             X_resampled, y_resampled = smote_nc.fit_resample(X, y)
 
-            # Crea un nuevo DataFrame con las muestras sintéticas
+            # Create a new DataFrame with synthetic samples
             df_balanced = pd.concat([pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=target)], axis=1)
-    
+
+        else:
+            label_encoder = LabelEncoder()
+            aux = df.copy()
+            aux[target] = label_encoder.fit_transform(aux[target])
+            df_no = aux[aux[target] == 0]
+            df_yes = aux[aux[target] == 1]
+            df_no_reduced = df_no.sample(df_yes.shape[0], random_state=1)
+            df_balanced = pd.concat([df_no_reduced, df_yes], axis=0)
+            df_balanced = df_balanced.sample(frac=1, random_state=1)
+
         return df_balanced
-        
+
     @classmethod
-    def all_eda(cls,df,
-                target:str,
-                p=0.5,
-                imputar=True,
-                metodo_imputar="mm",
-                n_neighbors=5,
-                convertir=True,
-                metodo_convertir="ohe",
-                estandarizar=False,
-                metodo_estandarizar="zscore",
-                balancear=False,
-                undesampling=True,
-                mezclar=False):
+    def perform_full_eda(cls, df: pd.DataFrame,
+                         target: str,
+                         cols_exclude=[],
+                         p=0.5,
+                         impute=True,
+                         imputation_method='mm',
+                         n_neighbors=None,
+                         convert=True,
+                         conversion_method="ohe",
+                         standardize=False,
+                         standardization_method="zscore",
+                         balance=False,
+                         balance_oversampling=True,
+                         shuffle=False):
         """
-        Realiza un Análisis Exploratorio de Datos (EDA) completo en un DataFrame dado.
-        Parámetros:
-            df (pandas DataFrame): El DataFrame con los datos a analizar.
-            target (str): El nombre de la columna que contiene la variable objetivo.
-            balancear (bool, optional): Si True, balancea los datos en función de la variable objetivo.
-                                        Por defecto es False.
-            p (float, optional): Umbral para eliminar columnas con valores faltantes en más de p fracción de filas.
-                                 Por defecto es 0.5 (eliminar columnas con más del 50% de valores faltantes).
-            imputar (bool, optional): Si True, imputa los valores faltantes en el DataFrame después de eliminar
-                                      las columnas con valores faltantes. Por defecto es True.
-            metodo_imputar (str, optional): El método de imputación a utilizar si imputar=True. Opciones válidas:
-                                            "mm" (por defecto) para imputar la mediana en variables numéricas y la moda en categóricas,
-                                            "knn" para utilizar KNNImputer.
-            n_neighbors (int, optional): El número de vecinos más cercanos a utilizar en el método KNNImputer.
-                                         Solo aplicable si metodo_imputar="knn".
-            estandarizar (bool, optional): Si True, estandariza las variables numéricas en el DataFrame después de imputar los valores faltantes.
-                                           Por defecto es False.
-            metodo_estandarizar (str, optional): El método de estandarización a utilizar si estandarizar=True. 
-                                                Opciones válidas:
-                                                 "zscore" (por defecto) para estandarización Z-score,
-                                                 "minmax" para Min-Max scaling,
-                                                 "robust" para Robust scaling.
-            mezclar (bool, optional): Si True, mezcla los datos del DataFrame. Por defecto False
-        Retorna:
-            pandas DataFrame: El DataFrame con los datos limpios y procesados después de aplicar el EDA completo.
-        Ejemplo de uso:
-            df_cleaned = Eda.all_eda(df, target="target", balancear=True, 
-                                    p=0.3, imputar=True, metodo_imputar="knn", 
-                                    n_neighbors=5, estandarizar=True, 
-                                    metodo_estandarizar="zscore", mezclar=True)
+        Performs a complete Exploratory Data Analysis (EDA) on a given DataFrame.
+
+        Parameters:
+            df (pandas DataFrame): The DataFrame with the data to analyze.
+            target (str): The name of the column containing the target variable.
+            cols_exclude (list, optional): Columns that we do not want to transform.
+            balance (bool, optional): If True, balances the data based on the target variable.
+                                      Default is False.
+            p (float, optional): Threshold to remove columns with missing values in more than p fraction of rows.
+                                 Default is 0.5 (remove columns with over 50% missing values).
+            impute (bool, optional): If True, imputes missing values in the DataFrame after removing columns with missing values.
+                    Default is True.
+            imputation_method (str, optional): The imputation method to use if impute=True. Valid options:
+                    "mm" (default) to impute median for numeric variables and mode for categorical,
+                    "knn" to use KNNImputer.
+            n_neighbors (int, optional): The number of nearest neighbors to use in the KNNImputer method.
+                    Only applicable if imputation_method="knn".
+            standardize (bool, optional): If True, standardizes numeric variables in the DataFrame after imputing missing values.
+                                         Default is False.
+            standardization_method (str, optional): The standardization method to use if standardize=True.
+                    Valid options:
+                        "zscore" (default) for Z-score standardization,
+                        "minmax" for Min-Max scaling,
+                        "robust" for Robust scaling.
+            balance (bool, optional):
+            balance_oversampling (bool, optional):
+            shuffle (bool, optional): If True, shuffles the data in the DataFrame. Default is False.
+
+        Returns:
+            pandas DataFrame: The DataFrame with cleaned and processed data after applying the full EDA.
+
+        Usage Example:
+            cleaned_df = Eda.perform_full_eda(df, target="target", balance=True, 
+                                              p=0.3, impute=True, imputation_method="knn", 
+                                              n_neighbors=5, standardize=True, 
+                                              standardization_method="zscore", shuffle=True)
         """
-        df_limpio = cls.eliminar_unitarios(df)
-        df_limpio = cls.eliminar_nulos_si(df_limpio,p)
-        if imputar:
-            df_limpio = cls.imputar_faltantes(df_limpio,metodo_imputar,n_neighbors)
-        if convertir:
-            df_limpio = cls.convertir_a_numericas(df_limpio,target,metodo=metodo_convertir)
-        if estandarizar:
-            df_limpio = cls.estandarizar_variables(df_limpio,target,metodo_estandarizar)
-        if balancear:
-            df_limpio = cls.balancear_datos(df_limpio,target,undersampling=undesampling)
-        if mezclar:
-            df_limpio = cls.mezclar_datos(df_limpio)
-        return df_limpio
+        df_cleaned = cls.remove_single_value_columns(df)
+        df_cleaned = cls.remove_missing_if(df_cleaned, p)
+        if impute:
+            df_cleaned = cls.impute_missing(df_cleaned, imputation_method, n_neighbors)
+        if standardize:
+            df_cleaned = cls.standardize_variables(df_cleaned, target, method=standardization_method, cols_exclude=cols_exclude)
+        if convert:
+            df_cleaned = cls.convert_to_numeric(df_cleaned, target, method=conversion_method)
+        if balance:
+            df_cleaned = cls.balance_data(df_cleaned, target, oversampling=balance_oversampling)
+        if shuffle:
+            df_cleaned = cls.shuffle_data(df_cleaned)
+        return df_cleaned
     
 
 class Graphs_eda:
 
     @classmethod
-    def graficos_categoricos(cls, df)->None:
+    def categorical_plots(cls, df: pd.DataFrame) -> None:
         """
-        Crea gráficos de barras horizontales para cada variable categórica en el DataFrame.
-        Parámetros:
-            df (pandas DataFrame): El DataFrame que contiene las variables categóricas a graficar.
+        Creates horizontal bar charts for each categorical variable in the DataFrame.
+        Parameters:
+            df (pandas DataFrame): The DataFrame containing the categorical variables to plot.
         """
-        # Seleccionar columnas categóricas del DataFrame
+        # Select categorical columns from the DataFrame
         categorical_columns = df.select_dtypes('O').columns
-        # Calcular el número de columnas categóricas y filas para organizar los gráficos
+        # Calculate the number of categorical columns and rows to organize the plots
         num_columns = len(categorical_columns)
         rows = (num_columns + 1) // 2
-        # Crear la figura y los ejes de los gráficos
+        # Create the figure and axes for the plots
         _, ax = plt.subplots(nrows=rows, ncols=2, figsize=(16, rows * 6))
         ax = ax.flat
-        # Generar gráficos de barras horizontales para cada variable categórica
+        # Generate horizontal bar charts for each categorical variable
         for i, col in enumerate(categorical_columns):
             df[col].value_counts().plot.barh(ax=ax[i])
             ax[i].set_title(col, fontsize=12, fontweight="bold")
             ax[i].tick_params(labelsize=12)
-        # Ajustar el diseño y mostrar los gráficos
+        # Adjust the layout and display the plots
         plt.tight_layout()
         plt.show()
 
     @classmethod
-    def grafico_histograma(cls, df, column:str)->None:
+    def histogram_plot(cls, df: pd.DataFrame, column: str) -> None:
         """
-        Genera un histograma interactivo para una columna específica del DataFrame.
+        Generates an interactive histogram for a specific column in the DataFrame.
         Parameters:
-            column (str): Nombre de la columna a visualizar en el histograma.
+            column (str): Name of the column to visualize in the histogram.
         """
         fig = px.histogram(df, x=column)
         fig.show()
 
     @classmethod
-    def grafico_caja(cls, df, x:str, y:str)->None:
+    def box_plot(cls, df: pd.DataFrame, column_x: str, column_y: str) -> None:
         """
-        Genera un gráfico de caja interactivo para una variable y en función de otra variable x.
+        Generates an interactive box plot for a variable y based on another variable x.
         Parameters:
-            x (str): Nombre de la variable independiente en el gráfico de caja.
-            y (str): Nombre de la variable dependiente en el gráfico de caja.
+            column_x (str): Name of the independent variable in the box plot.
+            column_y (str): Name of the dependent variable in the box plot.
         """
-        fig = px.box(df, x=x, y=y)
+        fig = px.box(df, x=column_x, y=column_y)
         fig.show()
 
     @classmethod
-    def grafico_dispersion(cls, df, x:str, y:str)->None:
+    def scatter_plot(cls, df: pd.DataFrame, column_x: str, column_y: str) -> None:
         """
-        Genera un gráfico de dispersión interactivo para dos variables x e y.
+        Generates an interactive scatter plot for two variables x and y.
         Parameters:
-            x (str): Nombre de la variable x en el gráfico de dispersión.
-            y (str): Nombre de la variable y en el gráfico de dispersión.
+            column_x (str): Name of variable x in the scatter plot.
+            column_y (str): Name of variable y in the scatter plot.
         """
-        fig = px.scatter(df, x=x, y=y)
+        fig = px.scatter(df, x=column_x, y=column_y)
         fig.show()
 
     @classmethod
-    def grafico_clusters_jerarquicos(cls, df, method='single', metric='euclidean', save_clusters=False):
+    def hierarchical_clusters_plot(cls, df: pd.DataFrame, method='single', metric='euclidean', save_clusters=False):
         """
-        Genera un dendrograma jerárquico a partir de un DataFrame y guarda los clusters en una serie.
+        Generates a hierarchical dendrogram from a DataFrame and saves the clusters in a series.
 
-        :param df: DataFrame con los datos para el análisis.
-        :param num_clusters: Número de clusters deseados.
-        :param method: 'single' (defecto), 'complete', 'average', 'weighted', 'ward', 'centroid', 'median'.
-        :param metric: Métrica de distancia para el cálculo del enlace.
-        :param save_clusters: True para generar una serie con el cluster de cada observación, \
-            pedirá ingresar el numero de clusters a utilizar.
+        :param df: DataFrame with data for analysis.
+        :param method: 'single' (default), 'complete', 'average', 'weighted', 'ward', 'centroid', 'median'.
+        :param metric: Distance metric for linkage calculation.
+        :param save_clusters: True to generate a series with the cluster of each observation, \
+            will prompt for the number of clusters to use.
 
-        :return: Serie con los clusters generados.
+        :return: Series with generated clusters.
         """
-        # Calcular la matriz de enlace
-        linked = linkage(df.values, method=method, metric=metric, optimal_ordering=True) 
+        # Calculate the linkage matrix
+        linked = linkage(df.values, method=method, metric=metric, optimal_ordering=True)
 
-        # Generar el dendrograma
+        # Generate the dendrogram
         plt.figure(figsize=(10, 6))
-        dendrogram(linked, orientation='top', labels=df.index, distance_sort='descending', show_leaf_counts=True) # type: ignore
-        plt.title('Dendrograma')
-        plt.xlabel('Índices de los puntos')
-        plt.ylabel('Distancias')
+        dendrogram(linked, orientation='top', labels=df.index, distance_sort='descending', show_leaf_counts=True)
+        plt.title('Dendrogram')
+        plt.xlabel('Indices of Points')
+        plt.ylabel('Distances')
         plt.show()
 
         if save_clusters:
-            num_clusters = int(input('Numero de clusters a utilizar (observe el dendrograma)'))
-            # Obtener los clusters usando la función fcluster
-            corte = linked[-num_clusters + 1, 2]  # Altura del corte en el dendrograma
+            num_clusters = int(input('Number of clusters to use (observe the dendrogram)'))
+            # Get clusters using the fcluster function
+            corte = linked[-num_clusters + 1, 2]  # Height of the cut in the dendrogram
             clusters = fcluster(linked, corte, criterion='distance')
 
-            # Crear una serie con los clusters y devolverla
+            # Create a series with the clusters and return it
             cluster_series = pd.Series(clusters, index=df.index, name='Clusters')
             return cluster_series
-    
+
     @classmethod
-    def grafico_correlacion(cls, df) -> None:
+    def correlation_heatmap_plot(cls, df: pd.DataFrame) -> None:
         """
-        Genera un heatmap de correlación para el DataFrame dado.
+        Generates a correlation heatmap for the given DataFrame.
 
         Args:
-            df: Un DataFrame con los datos.
+            df: A DataFrame with the data.
 
         Returns:
             None.
         """
         corr = df.corr()
-        plt.figure(figsize=(12,10))
+        plt.figure(figsize=(12, 10))
         sns.heatmap(corr, linewidth=0.5, annot=True, cmap="RdBu", vmin=-1, vmax=1)
-
