@@ -21,7 +21,7 @@ from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, Rob
 from imblearn.over_sampling import SMOTENC
 
 
-class Eda:
+class EDA:
 
     @classmethod
     def analyze_nulls(cls, df: pd.DataFrame) -> None:
@@ -292,6 +292,51 @@ class Eda:
             df_balanced = df_balanced.sample(frac=1, random_state=1)
 
         return df_balanced
+        
+    @classmethod
+    def remove_duplicate(cls, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Remove duplicate rows from a pandas DataFrame.
+        
+        Args:
+            df (pd.DataFrame): The DataFrame from which duplicate rows will be removed.
+            
+        Returns:
+            pd.DataFrame: A new DataFrame with duplicate rows removed.
+        """
+        print(f'Number of duplicate observations: {df.duplicated().sum()}')
+        print(f'Percentage of duplicate observations in total observations: % \
+              {100*(df.duplicated().sum())/df.shape[0]:.1f}')
+        cleaned_df = df.drop_duplicates(keep='first')
+        return cleaned_df
+        
+    @classmethod
+    def remove_outliers(cls, df: pd.DataFrame, method='zscore', threshold=3) -> pd.DataFrame:
+        """
+       Remove outliers from a pandas DataFrame using different methods.
+
+       Arguments:
+           df (pd.DataFrame): The data frame from which outliers will be removed.
+           method (str): The method to remove outliers, can be 'zscore' (default) or 'iqr'.
+           threshold (float): The threshold for considering a value as an outlier.
+
+       Returns:
+           pd.DataFrame: A new DataFrame with no outliers.
+       """
+        if method == 'zscore':
+            z_scores = np.abs((df - df.mean()) / df.std())
+            cleaned_df = df[(z_scores < threshold).all(axis=1)]
+        elif method == 'iqr':
+            Q1 = df.quantile(0.25)
+            Q3 = df.quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - threshold * IQR
+            upper_bound = Q3 + threshold * IQR
+            cleaned_df = df[((df >= lower_bound) & (df <= upper_bound)).all(axis=1)]
+        else:
+            raise ValueError("Invalid method. Please use 'zscore' or 'iqr'.")
+
+        return cleaned_df
 
     @classmethod
     def perform_full_eda(cls, df: pd.DataFrame,
@@ -301,8 +346,12 @@ class Eda:
                          impute=True,
                          imputation_method='mm',
                          n_neighbors=None,
+                         drop_duplicate=True,
                          convert=True,
                          conversion_method="ohe",
+                         drop_outliers=False,
+                         outliers_method='zscore',
+                         outliers_threshold=3,
                          standardize=False,
                          standardization_method="zscore",
                          balance=False,
@@ -326,6 +375,12 @@ class Eda:
                     "knn" to use KNNImputer.
             n_neighbors (int, optional): The number of nearest neighbors to use in the KNNImputer method.
                     Only applicable if imputation_method="knn".
+            drop_duplicate (bool, optional): Remove duplicate rows from a DataFrame. Default True.
+            convert (bool, optional): Performs the encoding of categorical variables. Default True.
+            conversion_method (str, optional): If convert is True, use 'ohe' (default), 'dummy' or 'label'.
+            drop_outliers (bool, optional): Remove outliers from a pandas DataFrame. Default False.
+            outliers_method (str, optional): If drop_outliers is True, use 'zscore' (default) or 'iqr'.
+            outliers_threshold (int, optional): If drop_outliera is True, the threshold for considering a value as an outlier.
             standardize (bool, optional): If True, standardizes numeric variables in the DataFrame after imputing missing values.
                                          Default is False.
             standardization_method (str, optional): The standardization method to use if standardize=True.
@@ -350,10 +405,14 @@ class Eda:
         df_cleaned = cls.remove_missing_if(df_cleaned, p)
         if impute:
             df_cleaned = cls.impute_missing(df_cleaned, imputation_method, n_neighbors)
+        if drop_duplicate:
+            df_cleaned = cls.remove_duplicate(df_cleaned)
         if standardize:
             df_cleaned = cls.standardize_variables(df_cleaned, target, method=standardization_method, cols_exclude=cols_exclude)
         if convert:
             df_cleaned = cls.convert_to_numeric(df_cleaned, target, method=conversion_method)
+        if drop_outliers:
+            df_cleaned = cls.remove_outliers(df_cleaned, method=outliers_method, threshold=outliers_threshold)
         if balance:
             df_cleaned = cls.balance_data(df_cleaned, target, oversampling=balance_oversampling)
         if shuffle:

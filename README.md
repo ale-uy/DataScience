@@ -26,21 +26,25 @@ The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulatio
 
 9. `EDA.analyze_nulls(df)`: Returns the percentage of null values in the entire dataset for each column.
 
-10. `EDA.perform_full_eda(df, target, cols_exclude=[], p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline to perform various (or all) steps of the class automatically.
+10. `EDA.remove_duplicate(df)`: Remove duplicate rows from a DataFrame.
+
+11. `EDA.remove_outliers(df, method='zscore', threshold=3)`: Remove outliers from a DataFrame using different methods. The method to remove outliers, can be 'zscore' (default) or 'iqr'.
+
+12. `EDA.perform_full_eda(df, target, cols_exclude=[], p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline to perform various (or all) steps of the class automatically.
 
 #### Data Visualization (Graphs_eda)
 
-11. `Graphs_eda.categorical_plots(df)`: Creates horizontal bar charts for each categorical variable in the DataFrame.
+13. `Graphs_eda.categorical_plots(df)`: Creates horizontal bar charts for each categorical variable in the DataFrame.
 
-12. `Graphs_eda.histogram_plot(df, column)`: Generates an interactive histogram for a specific column in the DataFrame.
+14. `Graphs_eda.histogram_plot(df, column)`: Generates an interactive histogram for a specific column in the DataFrame.
 
-13. `Graphs_eda.box_plot(df, column_x, column_y)`: Generates an interactive box plot for a variable y based on another variable x.
+15. `Graphs_eda.box_plot(df, column_x, column_y)`: Generates an interactive box plot for a variable y based on another variable x.
 
-14. `Graphs_eda.scatter_plot(df, column_x, column_y)`: Generates an interactive scatter plot for two variables, x and y.
+16. `Graphs_eda.scatter_plot(df, column_x, column_y)`: Generates an interactive scatter plot for two variables, x and y.
 
-15. `Graphs_eda.hierarchical_clusters_plot(df, method='single', metric='euclidean', save_clusters=False)`: Generates a dendrogram that is useful for determining the value of k (clusters) in hierarchical clusters.
+17. `Graphs_eda.hierarchical_clusters_plot(df, method='single', metric='euclidean', save_clusters=False)`: Generates a dendrogram that is useful for determining the value of k (clusters) in hierarchical clusters.
 
-16. `Graphs_eda.correlation_heatmap_plot(df)`: Generates a correlation heatmap for the given DataFrame.
+18. `Graphs_eda.correlation_heatmap_plot(df)`: Generates a correlation heatmap for the given DataFrame.
 
 ## Module [ml.py](): Data Modeling
 
