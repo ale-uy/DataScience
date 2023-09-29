@@ -233,9 +233,12 @@ class EDA:
         Returns:
             pandas DataFrame: The original DataFrame with standardized numeric variables.
         """
-        cols_exclude.append(target)
-        y = df[cols_exclude]
-        aux = df.drop(columns=cols_exclude, axis=1)
+        ## TODO ##
+        # cols_exclude.append(target)
+        # y = df[cols_exclude]
+        # aux = df.drop(columns=cols_exclude, axis=1)
+        y = df[target]
+        aux = df.drop(columns=target, axis=1)
         if method == 'zscore':
             scaler = StandardScaler()
         elif method == 'minmax':

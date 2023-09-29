@@ -1,5 +1,3 @@
-[Proyecto en PyPi](https://pypi.org/project/ale-uy/)
-___
 ## Modulo [eda.py](): Manipulación de Datos
 
 Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipulaciones y visualizaciones de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento y limpieza de los datos.
@@ -108,7 +106,7 @@ Estos métodos son útiles para explorar y comprender datos de series temporales
 
 ## Instalación
 
-Para utilizar las clases `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, `Tools`, simplemente importa la clase en tu código (primero instalar con pip ``pip install ale-uy``):
+Para utilizar las clases `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, `Tools`, simplemente importa la clase en tu código (primero colocar la carpeta ``ale_uy`` en el directorio de trabajo):
 
 ```python
 from ale_uy.eda import EDA, Graphs_eda
@@ -117,7 +115,7 @@ from ale_uy.ts import TS, Graphs_ts, Propheta
 ```
 
 ## Ejemplo de Uso
-Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (IMPORTANTE: Colocar la carpeta **`ale_uy/`** con sus correspondientes archivos **[eda.py]()**, **[ts.py]()** y **[ml.py]()** en la carpeta donde estes trabajando, si es que no instalaste via pip (``pip install ale-uy``):
+Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (**IMPORTANTE**: Colocar la carpeta **`ale_uy/`** con sus correspondientes archivos **[eda.py]()**, **[ts.py]()** y **[ml.py]()** en la carpeta donde estes trabajando):
 
 ```python
 # Importar los modulos ml y eda con sus respectivas clases

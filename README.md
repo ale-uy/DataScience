@@ -114,7 +114,7 @@ These methods are useful for exploring and understanding time series data, ident
 
 ## Install
 
-To use the classes `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, and `Tools`, simply import the class in your code (first install with pip `pip install ale-uy`):
+To use the classes `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, and `Tools`, simply import the class in your code:
 
 ```python
 from ale_uy.eda import EDA, Graphs_eda
@@ -123,7 +123,7 @@ from ale_uy.ts import TS, Graphs_ts, Propheta
 ```
 
 ## Usage Example
-Here's an example of how to use the **EDA** and **ML** classes to preprocess data and train a LightGBM model for a binary classification problem (IMPORTANT: Place the **`ale_uy/`** folder with its corresponding **[eda.py]()**, **[ts.py]()**, and **[ml.py]()** files in the working directory if you didn't install via pip (`pip install ale-uy`)):
+Here's an example of how to use the **EDA** and **ML** classes to preprocess data and train a LightGBM model for a binary classification problem (IMPORTANT: Place the **`ale_uy/`** folder with its corresponding **[eda.py]()**, **[ts.py]()**, and **[ml.py]()** files in the working directory):
 
 ```python
 # Import the ml and eda modules with their respective classes
