@@ -104,18 +104,30 @@ Estos métodos son útiles para explorar y comprender datos de series temporales
 12. `Propheta.load_prophet_model(model_name='prophet_model')`: Este método carga un modelo de Prophet guardado previamente desde un archivo JSON. Puede especificar el nombre del archivo del modelo que se va a cargar.
 13. `Propheta.train_prophet_model(...)`: Este método entrena y ajusta un modelo de Profeta para el pronóstico de series temporales. Dentro del docstring se pueden ver los parametros que pueden ser personalizados.
 
+## Module [dl.py](): Modelos de Rede Neuronales
+
+La clase `dl.DL` es una herramientas que te ayudará a modelar datos con redes neuronales. Está diseñada para facilitar la tarea de crear el modelado y la predicción con los datos que dispongas.
+
+### Métodos Disponibles:
+
+1. `DL.model_ANN(...)`: cree un modelo de red neuronal artificial (ANN) personalizable utilizando scikit-learn. Puede explorar los parámetros personalizables dentro de la cadena de documentación.
+2. `DL.model_FNN(...)`: Crea un modelo de red neuronal de avance (FNN) personalizable. Puede explorar los parámetros personalizables dentro de la cadena de documentación.
+
 ## Instalación
 
-Para utilizar las clases `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, `Tools`, simplemente importa la clase en tu código (primero colocar la carpeta ``ale_uy`` en el directorio de trabajo):
+Colocar la carpeta **`ale_uy/`** con sus correspondientes archivos **[eda.py]()**, **[ts.py]()**, **[ml.py]()** y **[dl.py]()** en el directorio de trabajo, Luego vaya al cmd (linea de comandos) con click izquierdo y tocar abrir cmd aquí, e instale los requisitos con ``pip install -r requirements.txt`` (IMPORTANTE: se recomienda hacerlo en un entorno virtual limpio, para ver cómo hacerlo vaya a [virtualenv](https://virtualenv.pypa.io/en/latest/user_guide.html))
+
+Para usar las clases `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, `DL` y `Tools`, simplemente importa la clase en tu código:
 
 ```python
 from ale_uy.eda import EDA, Graphs_eda
 from ale_uy.ml import ML, Tools, Graphs_ml
 from ale_uy.ts import TS, Graphs_ts, Propheta
+from ale_uy.dl import DL
 ```
 
 ## Ejemplo de Uso
-Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria (**IMPORTANTE**: Colocar la carpeta **`ale_uy/`** con sus correspondientes archivos **[eda.py]()**, **[ts.py]()** y **[ml.py]()** en la carpeta donde estes trabajando):
+Aquí tienes un ejemplo de cómo usar la clase **EDA** y **ML** para realizar un preprocesamiento de datos y entrenar un modelo de LightGBM para un problema de clasificación binaria:
 
 ```python
 # Importar los modulos ml y eda con sus respectivas clases
@@ -148,6 +160,7 @@ loaded_model = joblib.load(model_filename)
 # Supongamos que tienes un conjunto de datos 'X_test' para hacer predicciones
 y_pred = loaded_model.predict(X_test)
 ```
+
 ## Contribución
 Si encuentras algún problema o tienes ideas para mejorar estas clases, ¡no dudes en contribuir! Puedes hacerlo enviando pull requests o abriendo issues en el [Repositorio del Proyecto](https://github.com/ale-uy/DataScience).
 

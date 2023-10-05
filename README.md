@@ -1,5 +1,3 @@
-[PyPi Project](https://pypi.org/project/ale-uy/)
-
 ## Module [eda.py](): Data Manipulation
 
 The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulations and visualizations in a simple and efficient manner. These classes are designed to streamline various tasks related to data processing and cleaning.
@@ -112,18 +110,30 @@ These methods are useful for exploring and understanding time series data, ident
 12. `Propheta.load_prophet_model(model_name='prophet_model')`: This method loads a previously saved Prophet model from a JSON file. You can specify the name of the model file to load.
 13. `Propheta.train_prophet_model(...)`: This method trains and fits a Prophet model for time series forecasting. You can customize the parameters as described in the docstring.
 
+## Module [dl.py](): Neural Networks Models
+
+The `dl.DL` class is a tool that will help you model data with neural networks. It is designed to make it easy to create modeling and prediction with the data you have.
+
+### Available Methods
+
+1. `DL.model_ANN(...)`: Create a customizable Artificial Neural Network (ANN) model using scikit-learn. You can explore the customizable parameters within the docstring.
+2. `DL.model_FNN(...)`: Creates a customizable Feedforward Neural Network (FNN) model using Tensorflow. You can explore the customizable parameters within the docstring.
+
 ## Install
 
-To use the classes `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, and `Tools`, simply import the class in your code:
+Place the **`ale_uy/`** folder with its corresponding **[eda.py]()**, **[ts.py]()**, **[ml.py]()** and **[dl.py]()** files in the working directory. Then go to cmd and install the requirements with ``pip install -r requirements.txt`` (IMPORTANT: it is recommended to do it in a clean virtual environment, to see how to do it go to [virtualenv](https://virtualenv.pypa.io/en/latest/user_guide.html))
+
+To use the classes `ML`, `EDA`, `Graphs_ml`, `Graphs_eda`, `DL`, and `Tools`, simply import the class in your code:
 
 ```python
 from ale_uy.eda import EDA, Graphs_eda
 from ale_uy.ml import ML, Tools, Graphs_ml
 from ale_uy.ts import TS, Graphs_ts, Propheta
+from ale_uy.dl import DL
 ```
 
 ## Usage Example
-Here's an example of how to use the **EDA** and **ML** classes to preprocess data and train a LightGBM model for a binary classification problem (IMPORTANT: Place the **`ale_uy/`** folder with its corresponding **[eda.py]()**, **[ts.py]()**, and **[ml.py]()** files in the working directory):
+Here's an example of how to use the **EDA** and **ML** classes to preprocess data and train a LightGBM model for a binary classification problem:
 
 ```python
 # Import the ml and eda modules with their respective classes
@@ -157,6 +167,7 @@ loaded_model = joblib.load(model_filename)
 # Suppose you have a dataset 'X_test' for making predictions
 y_pred = loaded_model.predict(X_test)
 ```
+
 ## Contribution
 If you encounter any issues or have ideas to improve these classes, please feel free to contribute! You can do so by submitting pull requests or opening issues on the [Project Repository](https://github.com/ale-uy/DataScience).
 

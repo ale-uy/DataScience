@@ -1,6 +1,4 @@
 CheatSheet
-activar_entorno.bat
-entorno_NO_BORRAR
 __pycache__
 .vscode
-ale_uy/dl.py
+ale_uy/dl_alpha.py
