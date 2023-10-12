@@ -2,13 +2,18 @@
 """
 Author: ale-uy
 Date: 07/2023
-Updated: 09/2023
+Updated: 10/2023
 Version: v2
 File: ml.py
 Description: Automate machine learning processes
 License: Apache License Version 2.0
 """
 
+import joblib
+import warnings
+import optuna
+import xgboost as xgb
+import catboost as cb
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -16,8 +21,7 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import lightgbm as lgb
 from sklearn.mixture import GaussianMixture
-import xgboost as xgb
-import catboost as cb
+from itertools import combinations
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score, train_test_split
@@ -25,8 +29,7 @@ from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_er
     precision_score, recall_score, f1_score, roc_auc_score, r2_score, mean_squared_log_error, silhouette_score
 from sklearn.cluster import KMeans, DBSCAN
 
-import joblib
-import warnings
+
 
 pd.set_option('display.max_colwidth', None) # Display full cell width in the DataFrame
 warnings.filterwarnings("ignore", category=UserWarning, message="KMeans is known to have a memory leak on Windows with MKL")
@@ -167,20 +170,17 @@ class Tools:
         if metric_type == "classification":
             # Classification values
             accuracy = accuracy_score(y_test, y_pred)
-            precision = precision_score(y_test, y_pred)
-            recall = recall_score(y_test, y_pred)
-            f1 = f1_score(y_test, y_pred)
-            roc_auc = roc_auc_score(y_test, y_pred)
+            precision = precision_score(y_test, y_pred, average='weighted')
+            recall = recall_score(y_test, y_pred, average='weighted')
+            f1 = f1_score(y_test, y_pred, average='weighted')
+            if len(set(y_pred)) > 2: 
+                roc_auc = 'Not Implemented for multiclass'
+            else:
+                roc_auc = roc_auc_score(y_test, y_pred)
 
             metric_df = pd.DataFrame({
                 'Metric': ['Accuracy', 'Precision', 'Recall', 'F1-score', 'AUC-ROC'],
-                'Value': [accuracy, precision, recall, f1, roc_auc],
-                'Explanation': [
-                    'Accuracy: Proportion of correctly classified samples.',
-                    'Precision: Proportion of true positive samples among all samples classified as positive.',
-                    'Recall: Proportion of true positive samples among all true positive samples.',
-                    'F1-score: Harmonic mean of precision and recall. Useful when there is class imbalance.',
-                    'AUC-ROC: Area under the ROC curve, which measures the model\'s discrimination ability.']
+                'Value': [accuracy, precision, recall, f1, roc_auc]
             })
 
         elif metric_type == "regression":
@@ -198,13 +198,7 @@ class Tools:
                 'Metric': ['Mean Squared Error (MSE)', 'Root Mean Squared Error (RMSE)',
                            'Mean Absolute Error (MAE)', 'Root Mean Squared Logarithmic Error (RMSLE)',
                            'Adjusted R-squared (R^2 adjusted)'],
-                'Value': [mse, rmse, mae, rmsle, r2_adj],
-                'Explanation': [
-                    'Mean Squared Error (MSE): Mean squared error between predictions and true values.',
-                    'Root Mean Squared Error (RMSE): Square root of MSE, indicates the average error of predictions.',
-                    'Mean Absolute Error (MAE): Mean absolute error between predictions and true values.',
-                    'Root Mean Squared Logarithmic Error (RMSLE): Square root of the mean squared logarithmic error between predictions and true values.',
-                    'Adjusted R-squared (R^2 adjusted): Adjusted R-squared that penalizes the addition of irrelevant variables in the model.']
+                'Value': [mse, rmse, mae, rmsle, r2_adj]
             })
 
         else:
@@ -241,6 +235,68 @@ class Tools:
 
         return result
     
+    @classmethod
+    def _optuna_search(cls, model, param_space, X_train, y_train, scoring='accuracy', n_iter=10, cv=5):
+        """
+        Performs hyperparameter tuning using Optuna.
+
+        Parameters:
+            model: The estimator of the model you want to tune.
+            param_space: A dictionary with hyperparameter names and their search spaces.
+            X_train: Training feature set.
+            y_train: Labels of the training set.
+            scoring: The evaluation metric. Default is 'accuracy'.
+            n_iter: Number of Optuna trials. Default is 10.
+            cv: Number of cross-validation partitions. Default is 5.
+
+        Returns:
+            dict: A dictionary containing the best-found hyperparameters and the best score.
+        """
+
+        def objective(trial):
+            # Define hyperparameters to be optimized
+            params = {}
+            for param_name, param_range in param_space.items():
+                if isinstance(param_range, tuple) and len(param_range) == 2:
+                    lower, upper = param_range
+                    if isinstance(lower, int) and isinstance(upper, int):
+                        # If it is a range of integers, use suggest_int
+                        params[param_name] = trial.suggest_int(param_name, lower, upper)
+                    elif isinstance(lower, float) and isinstance(upper, float):
+                        # If it is a range of floats, use suggest_uniform
+                        params[param_name] = trial.suggest_uniform(param_name, lower, upper)
+                    elif all(isinstance(val, str) for val in param_range):
+                        # If they are categorical values, use suggest_categorical
+                        params[param_name] = trial.suggest_categorical(param_name, param_range)
+                    else:
+                        raise ValueError(f"Unsupported range type for hyperparameter {param_name}")
+                else:
+                    raise ValueError(f"Invalid range for hyperparameter {param_name}")
+
+            # Set the hyperparameters in the model
+            model.set_params(**params)
+
+            # Perform cross-validation
+            scores = cross_val_score(model, X_train, y_train, cv=cv, scoring=scoring)
+            score = scores.mean()
+
+            return score
+
+        # Create an Optuna study and optimize hyperparameters
+        study = optuna.create_study(direction='maximize')  # Or 'minimize' if it is a minimization problem
+        study.optimize(objective, n_trials=n_iter)  # Number of test iterations
+
+        # Gets the best combination of hyperparameters found
+        best_params = study.best_params
+        best_score = study.best_value
+
+        result = {
+            'best_params': best_params,
+            'best_score': best_score
+        }
+
+        return result
+
     @classmethod
     def _random_search(cls, model, param_dist, X_train, y_train, scoring='accuracy', cv=5, n_iter=10):
         """
@@ -489,7 +545,7 @@ class ML(Tools):
     def lightgbm_model(cls, df:pd.DataFrame, target:str, problem_type:str, random_state=np.random.randint(1,1000),
                         num_leaves=20, num_boost_round=100, graph=False, test_size=0.2, cv=5,
                         learning_rate=0.1, max_depth=-1, save_model=False, model_filename='lightgbm', 
-                        encode_categorical=False, grid=False, boosting_type='gbdt', n_iter=10):
+                        encode_categorical=False, grid='', boosting_type='gbdt', n_iter=10):
         """
         Use LightGBM to predict the target variable in a DataFrame.
         
@@ -497,15 +553,20 @@ class ML(Tools):
             df (pandas DataFrame): The DataFrame containing the input variables and the target variable.
             target (str): The name of the column containing the target variable.
             problem_type (str): Type of problem: 'classification' or 'regression'.
+            random_state (int): Seed to use for data splitting, defaults to a random number.
             num_leaves (int): Maximum number of leaves in each tree. Controls the model's complexity. Default is 20.
             num_boost_round (int): The number of algorithm iterations (number of trees), default is 100.
+            graph (bool): If True, generate corresponding graphs based on the problem type.
+            test_size (float): The sample size for the test set, default is 0.2.
+            cv: Number of cross-validation partitions. Default is 5.
+            n_iter: Number of hyperparameter combinations to try. Default is 10.
             learning_rate (float): Model's learning rate, default is 0.1.
             max_depth (int): Maximum tree depth, default is -1 (no limit).
             save_model (bool): If True, the trained model will be saved to disk. Default is False.
             model_filename (str): The filename for saving the model. Required if save_model is True.
-            grid (bool): Indicates whether to perform hyperparameter tuning using GridSearch.
-                If True, an exhaustive hyperparameter search will be performed to optimize the LightGBM model's performance.
-                If False (default), no hyperparameter search will be conducted.
+            encode_categorical (bool, optional):
+            grid (str, optional): Indicates whether to perform hyperparameter tuning using: 
+                'full', 'random' or 'optuna'. Default None.
             boosting_type (str): Type of boosting algorithm to use.
                 Available options:
                 - 'gbdt': Gradient Boosting Decision Tree (default).
@@ -535,7 +596,10 @@ class ML(Tools):
                                                                            random_state=random_state,
                                                                            encode_categorical=encode_categorical)
 
-        if grid:
+        if problem_type == 'classification' and y_train.nunique() > 2:
+                raise NotImplementedError('Sorry, multiclass classification not found!')
+
+        if grid in ['full', 'random']:
             # Define the hyperparameter search space
             params = {
                 'boosting_type': ['gbdt', 'dart', 'goss'],
@@ -543,20 +607,54 @@ class ML(Tools):
                 'learning_rate': [0.01, 0.05, 0.1],
                 'max_depth': [2, 3, 5],
             }
+        
             # Define the estimator and scoring based on the problem type
             estimator = lgb.LGBMClassifier() if problem_type=='classification' else lgb.LGBMRegressor()
             scoring = 'neg_log_loss' if problem_type=='classification' else 'neg_mean_squared_error'
-            # Perform grid search using the Tools method
-            best_params = cls._random_search(estimator, 
+
+            # Perform grid search or random search using the Tools method
+            if grid == 'random':
+                best_params = cls._random_search(estimator, 
+                                                params, 
+                                                X_train, y_train,
+                                                scoring, 
+                                                cv=cv,
+                                                n_iter=n_iter)
+            else:
+                best_params = cls._grid_search(estimator, 
+                                                params, 
+                                                X_train, y_train,
+                                                scoring, 
+                                                cv=cv,
+                                                n_iter=n_iter)
+            # Display the values selected by Search
+            print(pd.DataFrame(best_params))
+            # Use the best-found hyperparameters
+            params = best_params['best_params']
+
+        elif grid == 'optuna':
+            params = {
+                'max_depth': (1, 10),
+                'learning_rate': (0.001, 1.0),
+                'n_estimators': (50, 1000),
+                'subsample': (0.1, 1.0),
+            }
+
+            # Define the estimator and scoring based on the problem type
+            estimator = lgb.LGBMClassifier() if problem_type=='classification' else lgb.LGBMRegressor()
+            scoring = 'neg_log_loss' if problem_type=='classification' else 'neg_mean_squared_error'
+
+            best_params = cls._optuna_search(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
                                             cv=cv,
                                             n_iter=n_iter)
-            # Display the values selected by GridSearch
+            # Display the values selected by Optuna
             print(pd.DataFrame(best_params))
             # Use the best-found hyperparameters
             params = best_params['best_params']
+
 
         else:
             # Manual parameters for the LightGBM model
@@ -612,7 +710,7 @@ class ML(Tools):
     def xgboost_model(cls, df:pd.DataFrame, target:str, problem_type:str, test_size=0.2, cv=5,
                 n_estimators=100, save_model=False, model_filename='xgboost',
                 learning_rate=0.1, max_depth=3, random_state=np.random.randint(1, 1000),
-                graph=False, grid=False, n_iter=10):
+                graph=False, grid='', n_iter=10):
         """
         Use XGBoost to predict the target variable in a DataFrame.
 
@@ -621,13 +719,15 @@ class ML(Tools):
             target (str): The name of the column containing the target variable.
             problem_type (str): Type of problem: 'classification' or 'regression'.
             test_size (float): The sample size for the test set, default is 0.2.
-            num_boost_round (int): The number of algorithm iterations (number of trees), default is 100.
+            n_estimators (int): The number of algorithm iterations (number of trees), default is 100.
             learning_rate (float): Model's learning rate, default is 0.1.
             max_depth (int): Maximum tree depth, default is 3.
-            objective (str): Objective function, 'reg:squarederror' for regression, 
-                'binary:logistic' for binary classification, 'multi:softmax' for multiclass classification.
+            cv: Number of cross-validation partitions. Default is 5.
+            n_iter: Number of hyperparameter combinations to try. Default is 10.
             random_state (int): Seed to use for data splitting, defaults to a random number.
             graph (bool): If True, generate corresponding graphs based on the problem type.
+            grid (str, optional): Indicates whether to perform hyperparameter tuning using: 
+                'full', 'random' or 'optuna'. Default None.
             NOTE: To load a model, do the following:
                 import joblib
 
@@ -653,7 +753,7 @@ class ML(Tools):
                                                                       test_size=test_size,
                                                                       random_state=random_state)
 
-        if grid:
+        if grid in ['full', 'random']:
             # XGBoost model parameters
             params = {
                 'booster': ['gbtree', 'gblinear', 'dart'],
@@ -662,17 +762,53 @@ class ML(Tools):
                 'learning_rate': [0.1, 0.06, 0.03, 0.01],  # Learning rate
                 'subsample': [0.1, 0.2, 0.5, 1.0]  # Subsampling rate
             }
+            
             # Define the estimator and scoring based on the problem type
             estimator = xgb.XGBClassifier() if problem_type=='classification' else xgb.XGBRegressor()
             scoring = 'neg_log_loss' if problem_type=='classification' else 'neg_mean_squared_error'
             # Perform grid search using the Tools method
-            best_params = cls._random_search(estimator, 
+
+            if grid == 'random': 
+                best_params = cls._random_search(estimator, 
+                                                params, 
+                                                X_train, y_train,
+                                                scoring, 
+                                                cv=cv,
+                                                n_iter=n_iter)
+            else:
+                best_params = cls._grid_search(estimator, 
+                                                params, 
+                                                X_train, y_train,
+                                                scoring, 
+                                                cv=cv,
+                                                n_iter=n_iter)
+                
+            # Display the values selected by GridSearch
+            print(pd.DataFrame(best_params))
+            # Use the best-found hyperparameters
+            params = best_params['best_params']
+
+        elif grid == 'optuna':
+            params = {
+                'n_estimators': (50, 200),
+                'max_depth': (1, 5),
+                'learning_rate': (0.001, 0.1),
+                'subsample': (0.1, 1.0)
+            }
+
+            # Define the estimator and scoring based on the problem type
+            estimator = xgb.XGBClassifier() if problem_type=='classification' else xgb.XGBRegressor()
+            scoring = 'neg_log_loss' if problem_type=='classification' else 'neg_mean_squared_error'
+            
+            # Perform grid search using the Tools method
+            best_params = cls._optuna_search(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
                                             cv=cv,
                                             n_iter=n_iter)
-            # Display the values selected by GridSearch
+            
+            # Display the values selected by Optuna
             print(pd.DataFrame(best_params))
             # Use the best-found hyperparameters
             params = best_params['best_params']
@@ -689,15 +825,15 @@ class ML(Tools):
             params['objective'] = 'binary:logistic' if y_test.nunique() == 2 else 'multi:softmax'
             
             # Train the XGBoost model for classification
-            xgb_model = xgb.XGBClassifier(**params)
+            xgb_model = xgb.XGBClassifier(**params, num_class=y_test.nunique())
             xgb_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=10, verbose=False)
             
-            # Make predictions on the test set
+            # # Make predictions on the test set
             y_pred = xgb_model.predict(X_test)
             if params['objective'] == 'binary:logistic':
                 y_pred_binary = np.where(y_pred > 0.5, 1, 0)
             else:
-                y_pred_binary = np.argmax(y_pred, axis=1)
+                y_pred_binary = y_pred #np.argmax(y_pred, axis=1)
             metrics = cls._metrics(y_test, y_pred_binary, metric_type='classification')
             if graph == True:
                 Graphs_ml.plot_classification(y_test, y_pred_binary)
@@ -726,7 +862,7 @@ class ML(Tools):
 
     @classmethod
     def catboost_model(cls, df:pd.DataFrame, target:str, problem_type:str, test_size=0.2, n_iter=10,
-                        num_boost_round=100, learning_rate=0.1, max_depth=3, cv=3,
+                        num_boost_round=100, learning_rate=0.1, max_depth=3, cv=5,
                         random_state=np.random.randint(1, 1000), graph=False,
                         save_model=False, model_filename='catboost', grid=False):
         """
@@ -740,9 +876,14 @@ class ML(Tools):
             num_boost_round (int): The number of algorithm iterations (number of trees), default is 100.
             learning_rate (float): Model's learning rate, default is 0.1.
             max_depth (int): Maximum tree depth, default is 3.
+            cv: Number of cross-validation partitions. Default is 5.
+            n_iter: Number of hyperparameter combinations to try. Default is 10.
             random_state (int): Seed to use for data splitting, defaults to a random number.
             graph (bool): If True, generate corresponding graphs based on the problem type.
-            grid (bool): If True, use grid search to find better values for hyperparameters. Default is False.
+            save_model (bool): If True, the trained model will be saved to disk. Default is False.
+            model_filename (str): The filename for saving the model if save_model is True.
+            grid (str, optional): Indicates whether to perform hyperparameter tuning using: 
+                'full', 'random' or 'optuna'. Default None.
             NOTE: To load a model, do the following:
                 import joblib
 
@@ -767,26 +908,63 @@ class ML(Tools):
                                                                       target,
                                                                       test_size=test_size,
                                                                       random_state=random_state)
-        if grid:
+        
+        if problem_type == 'classification' and y_train.nunique() > 2:
+                raise NotImplementedError('Sorry, multiclass classification not found!')
+
+        if grid in ['full', 'random']:
             params = {
                 'learning_rate': [0.01, 0.05, 0.1, 0.3],
                 'depth': [2, 3, 5],
                 'num_boost_round': [50, 100, 200]
             }
+
             # Define the estimator and scoring based on the problem type
             estimator = cb.CatBoostClassifier() if problem_type=='classification' else cb.CatBoostRegressor()
             scoring = 'neg_log_loss' if problem_type=='classification' else 'neg_mean_squared_error'
+
             # Perform grid search using the Tools method
-            best_params = cls._random_search(estimator, 
+            if grid == 'random':
+                best_params = cls._random_search(estimator, 
+                                                params, 
+                                                X_train, y_train,
+                                                scoring, 
+                                                cv=cv,
+                                                n_iter=n_iter)
+            else:
+                best_params = cls._grid_search(estimator, 
+                                                params, 
+                                                X_train, y_train,
+                                                scoring, 
+                                                cv=cv,
+                                                n_iter=n_iter)
+                
+            # Display the values selected by GridSearch
+            print(pd.DataFrame(best_params))
+            # Use the best-found hyperparameters
+            params = best_params['best_params']
+
+        elif grid == 'optuna':
+            params = {
+                'learning_rate': (0.001, 0.1),
+                'depth': (2, 5),
+                'num_boost_round': (50, 200)
+            }
+            # Define the estimator and scoring based on the problem type
+            estimator = cb.CatBoostClassifier() if problem_type=='classification' else cb.CatBoostRegressor()
+            scoring = 'neg_log_loss' if problem_type=='classification' else 'neg_mean_squared_error'
+
+            best_params = cls._optuna_search(estimator, 
                                             params, 
                                             X_train, y_train,
                                             scoring, 
                                             cv=cv,
                                             n_iter=n_iter)
-            # Display the values selected by GridSearch
+            # Display the values selected by Optuna
             print(pd.DataFrame(best_params))
             # Use the best-found hyperparameters
             params = best_params['best_params']
+
         else:
             params = {
                 'num_boost_round': num_boost_round,
@@ -826,4 +1004,5 @@ class ML(Tools):
             joblib.dump(model, f'{model_filename}.pkl')
 
         print(metrics)
+
         return model

@@ -56,8 +56,6 @@ The classes `ml.ML`, `ml.Graphs_ml`, and `ml.Tools` are a tool for performing mo
 
 3. `ML.catboost_model(...)`: Employs CatBoost to predict the target variable in a DataFrame. Similar to the previous methods, it can handle both classification and regression problems. You can explore the customizable parameters within the docstring.
 
-> *IMPORTANT*: If you pass `grid=True` as a parameter to any of these models (e.g: `model_catboost(grid=True,...)`), a **random** hyperparameter search is now conducted to reduce training times. Additionally, you can pass `n_iter=...` with the number you desire for the model to try different combinations of parameters (10 is the default option).
-
 #### Model Evaluation
 
 5. **Classification Metrics**: Calculates various evaluation metrics for a classification problem, such as *precision*, *recall*, *F1-score*, and the area under the ROC curve (*AUC-ROC*).

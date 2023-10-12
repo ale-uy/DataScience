@@ -36,7 +36,8 @@ class DL(Tools):
                    activation='relu',
                    num_epochs=10,
                    grid=False,
-                   batch_size=32):
+                   batch_size=32,
+                   max_trials=10):
         """
         Creates a customizable Feedforward Neural Network (FNN) model.
         Recommended for regression or classification problems.
@@ -55,6 +56,7 @@ class DL(Tools):
             num_epochs (int, optional): Number of epochs to train the model. Default is 10.
             grid (bool, optional): Search for hyperparameters. Default is False.
             batch_size (int, optional): Batch size for training. Default is 32.
+            max_trials (int, optional): If grid=True, use to search best params this number time. Default 10.
 
         Load Model:
             # Recreate the exact same model from the file
@@ -65,6 +67,9 @@ class DL(Tools):
         Returns:
             tensorflow.keras.models.Sequential: Feedforward Neural Network (FNN) model.
         """
+
+        if problem_type == 'classification' and df['target'].nunique() > 2:
+                raise NotImplementedError('Sorry, multiclass classification not found!')
 
         model = Sequential()
 
@@ -86,11 +91,16 @@ class DL(Tools):
         if grid:
             
             def build_model(hp):
+
+                # Create a new Sequential model in each iteration
+                model = Sequential()
+
                 # Hidden Layers
-                for _ in range(num_layers):
-                    model.add(Dense(units=hp.Int('units', min_value=8, max_value=128, step=8), 
-                                    activation=hp.Choice('activation', values=['relu', 'tanh', 'sigmoid'])))
-                    model.add(Dropout(rate=hp.Float('dropout', min_value=0.0, max_value=0.5, step=0.1)))
+                for i in range(num_layers):
+                    model.add(Dense(units=hp.Int('units_' + str(i), min_value=8, max_value=128, step=8), 
+                                    activation=hp.Choice('activation_' + str(i), values=['relu', 'tanh', 'sigmoid', 'softmax']),
+                                    name='dense_' + str(i)))  # Assign unique name for each dense layer
+                    model.add(Dropout(rate=hp.Float('dropout_' + str(i), min_value=0.0, max_value=0.5, step=0.1)))
 
                 model.add(Dense(num_class, activation=activation_out))
 
@@ -106,7 +116,7 @@ class DL(Tools):
             tuner = RandomSearch(
                 build_model,
                 objective='val_loss',
-                max_trials=10,  # Number of configurations to test
+                max_trials=max_trials,  # Number of configurations to test
                 directory='tuner_dir',
                 project_name='my_tuner')
 
@@ -133,7 +143,7 @@ class DL(Tools):
 
             # Model training
             X_train, X_test, y_train, y_test = Tools.split_and_convert_data(df, target)
-        
+
         model.fit(X_train, y_train, epochs=num_epochs, batch_size=batch_size)
 
         # Evaluate model effectiveness on test data
@@ -192,10 +202,13 @@ class DL(Tools):
         # Model training
         X_train, X_test, y_train, y_test = Tools.split_and_convert_data(df, target)
 
+        if problem_type == 'classification' and y_train.nunique() > 2:
+                raise NotImplementedError('Sorry, multiclass classification not found!')
+
         if grid:
             param_grid = {
                 'hidden_layer_sizes': [(16,), (32,), (64,), (16, 16), (32, 32)],
-                'activation': ['relu', 'tanh', 'logistic'],
+                'activation': ['relu', 'tanh', 'logistic', 'softmax'],
                 'learning_rate_init': [0.001, 0.01, 0.1, 1.0],
                 'solver': ['adam', 'sgd'],
                 'max_iter': [50, 100, 200],
