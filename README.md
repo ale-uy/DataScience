@@ -12,7 +12,7 @@ The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulatio
 
 3. `EDA.impute_missing(df, method="median", n_neighbors=None)`: Imputes missing values in a DataFrame using the median method for numerical variables and the mode method for categorical variables. The K-Nearest Neighbors (KNN) method can also be used to impute missing values.
 
-4. `EDA.standardize_variables(df, target, method="zscore", cols_exclude=[])`: Standardizes numerical variables in a DataFrame using the "z-score" method (mean and standard deviation-based standardization). Other standardization methods such as 'minmax' and 'robust' are also available.
+4. `EDA.standardize_variables(df, target, method="zscore")`: Standardizes numerical variables in a DataFrame using the "z-score" method (mean and standard deviation-based standardization). Other standardization methods such as 'minmax' and 'robust' are also available.
 
 5. `EDA.balance_data(df, target, oversampling=True)`: Performs random sampling of data to balance classes in a binary classification problem. This helps mitigate class imbalance issues in the dataset.
 
