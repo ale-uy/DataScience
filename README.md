@@ -28,7 +28,7 @@ The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulatio
 
 11. `EDA.remove_outliers(df, method='zscore', threshold=3)`: Remove outliers from a DataFrame using different methods. The method to remove outliers, can be 'zscore' (default) or 'iqr'.
 
-12. `EDA.perform_full_eda(df, target, cols_exclude=[], p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline to perform various (or all) steps of the class automatically.
+12. `EDA.perform_full_eda(df, target, p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline to perform various (or all) steps of the class automatically.
 
 #### Data Visualization (Graphs_eda)
 
