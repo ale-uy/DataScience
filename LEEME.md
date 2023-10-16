@@ -28,7 +28,7 @@ Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipu
 
 11. `EDA.remove_outliers(df, method='zscore', threshold=3)`: Elimine los valores atípicos de un DataFrame utilizando diferentes métodos. El método para eliminar valores atípicos puede ser 'zscore' (default) o 'iqr'.
 
-12. `EDA.perform_full_eda(df, target, cols_exclude=[], p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline para realizar varios (o todos) los pasos de la clase automáticamente.
+12. `EDA.perform_full_eda(df, target, p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline para realizar varios (o todos) los pasos de la clase automáticamente.
 
 #### Visualización de Datos (Graphs_eda)
 
