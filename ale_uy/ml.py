@@ -21,7 +21,6 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import lightgbm as lgb
 from sklearn.mixture import GaussianMixture
-from itertools import combinations
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, cross_val_score, train_test_split
@@ -32,7 +31,7 @@ from sklearn.cluster import KMeans, DBSCAN
 
 
 pd.set_option('display.max_colwidth', None) # Display full cell width in the DataFrame
-warnings.filterwarnings("ignore", category=UserWarning, message="KMeans is known to have a memory leak on Windows with MKL")
+warnings.filterwarnings("ignore")
 
 
 class Tools:

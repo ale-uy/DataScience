@@ -219,7 +219,7 @@ class EDA:
         return shuffled_df
     
     @classmethod
-    def standardize_variables(cls, df: pd.DataFrame, target: str, method="zscore", cols_exclude=[]):
+    def standardize_variables(cls, df: pd.DataFrame, target: str, method="zscore"):
         """
         Standardizes numeric variables in a DataFrame using the specified method.
         Parameters:
@@ -233,10 +233,7 @@ class EDA:
         Returns:
             pandas DataFrame: The original DataFrame with standardized numeric variables.
         """
-        ## TODO ##
-        # cols_exclude.append(target)
-        # y = df[cols_exclude]
-        # aux = df.drop(columns=cols_exclude, axis=1)
+
         y = df[target]
         aux = df.drop(columns=target, axis=1)
         if method == 'zscore':
@@ -251,6 +248,30 @@ class EDA:
         aux = pd.concat([aux, y], axis=1)
         return aux
     
+    @classmethod
+    def apply_log1p_transformation(cls, df):
+        """
+        Apply np.log1p transformation to non-negative numerical columns in a DataFrame.
+
+        Parameters:
+        - df (DataFrame): The pandas DataFrame containing the data.
+
+        This method applies the np.log1p transformation (logarithm of 1 plus the value) to all non-negative numerical columns
+        in the DataFrame for improved numerical stability.
+
+        Args:
+        - df (DataFrame): The pandas DataFrame containing the data.
+
+        Returns:
+        - df (DataFrame): The DataFrame with transformed columns.
+        """
+        df_transformed = df.copy()
+        numeric_columns = df.select_dtypes(include=['float', 'int']).columns
+        for column in numeric_columns:
+            if (df_transformed[column] >= 0).all():
+                df_transformed[column] = np.log1p(df_transformed[column])
+        return df_transformed
+
     @classmethod
     def balance_data(cls, df: pd.DataFrame, target: str, oversampling=True):
         """
@@ -344,7 +365,6 @@ class EDA:
     @classmethod
     def perform_full_eda(cls, df: pd.DataFrame,
                          target: str,
-                         cols_exclude=[],
                          p=0.5,
                          impute=True,
                          imputation_method='mm',
@@ -411,7 +431,7 @@ class EDA:
         if drop_duplicate:
             df_cleaned = cls.remove_duplicate(df_cleaned)
         if standardize:
-            df_cleaned = cls.standardize_variables(df_cleaned, target, method=standardization_method, cols_exclude=cols_exclude)
+            df_cleaned = cls.standardize_variables(df_cleaned, target, method=standardization_method)
         if convert:
             df_cleaned = cls.convert_to_numeric(df_cleaned, target, method=conversion_method)
         if drop_outliers:
@@ -447,6 +467,51 @@ class Graphs_eda:
             ax[i].tick_params(labelsize=12)
         # Adjust the layout and display the plots
         plt.tight_layout()
+        plt.show()
+
+    @classmethod
+    def numerical_plot_density(cls, df):
+        """
+        Generate density plots for all numerical features in a DataFrame.
+
+        Parameters:
+        - df (DataFrame): The pandas DataFrame containing the data.
+
+        This method iterates through all the numerical columns in the DataFrame, creating density plots for each one.
+        The density plots display the probability density of each numerical feature.
+
+        The plots are organized in a grid, with three plots per row, and the styling is set to 'whitegrid'.
+
+        Args:
+        - df (DataFrame): The pandas DataFrame containing the data.
+
+        Returns:
+        None
+        """
+        # Get the list of numerical columns in your DataFrame
+        numeric_columns = df.select_dtypes(include=['float', 'int']).columns
+
+        # Set the Seaborn style
+        sns.set(style="whitegrid")
+
+        # Define the plot size and the number of rows and columns in the grid
+        num_plots = len(numeric_columns)
+        rows = (num_plots + 1) // 2  # Calculate the number of rows needed (three plots per row)
+        cols = 2  # Three plots per row
+        _, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(8 * cols, 6 * rows))
+
+        # Iterate through the numerical features and create the density plots
+        for i, feature_name in enumerate(numeric_columns):
+            row_idx, col_idx = divmod(i, cols)  # Calculate the current row and column index
+            sns.histplot(data=df, x=feature_name, kde=True, ax=axes[row_idx, col_idx])
+            axes[row_idx, col_idx].set_title(f'Density Plot of {feature_name}')
+            axes[row_idx, col_idx].set_xlabel('Feature Value')
+            axes[row_idx, col_idx].set_ylabel('Density')
+
+        # Adjust the spacing between subplots
+        plt.tight_layout()
+
+        # Show the plots
         plt.show()
 
     @classmethod
