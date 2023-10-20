@@ -44,6 +44,8 @@ Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipu
 
 18. `Graphs_eda.correlation_heatmap_plot(df)`: Genera un mapa de calor de correlación para el DataFrame dado.
 
+19. `Graphs_eda.numerical_plot_density(df)`: Genera gráficos de densidad para todas las variables numéricas.
+
 ## Modulo [ml.py](): Modelado de Datos
 
 Las clases `ml.ML`, `ml.Graphs_ml` y `ml.Tools` son una herramienta para realizar modelados, manipulación y visualización de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento, entrenamiento y evaluación de modelos de aprendizaje automático.
