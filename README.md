@@ -12,7 +12,7 @@ The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulatio
 
 3. `EDA.impute_missing(df, method="median", n_neighbors=None)`: Imputes missing values in a DataFrame using the median method for numerical variables and the mode method for categorical variables. The K-Nearest Neighbors (KNN) method can also be used to impute missing values.
 
-4. `EDA.standardize_variables(df, target, method="zscore", cols_exclude=[])`: Standardizes numerical variables in a DataFrame using the "z-score" method (mean and standard deviation-based standardization). Other standardization methods such as 'minmax' and 'robust' are also available.
+4. `EDA.standardize_variables(df, target, method="zscore")`: Standardizes numerical variables in a DataFrame using the "z-score" method (mean and standard deviation-based standardization). Other standardization methods such as 'minmax' and 'robust' are also available.
 
 5. `EDA.balance_data(df, target, oversampling=True)`: Performs random sampling of data to balance classes in a binary classification problem. This helps mitigate class imbalance issues in the dataset.
 
@@ -28,7 +28,7 @@ The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulatio
 
 11. `EDA.remove_outliers(df, method='zscore', threshold=3)`: Remove outliers from a DataFrame using different methods. The method to remove outliers, can be 'zscore' (default) or 'iqr'.
 
-12. `EDA.perform_full_eda(df, target, cols_exclude=[], p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline to perform various (or all) steps of the class automatically.
+12. `EDA.perform_full_eda(df, target, p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline to perform various (or all) steps of the class automatically.
 
 #### Data Visualization (Graphs_eda)
 
