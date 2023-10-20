@@ -12,7 +12,7 @@ Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipu
 
 3. `EDA.impute_missing(df, method="mm", n_neighbors=None)`: Imputa los valores faltantes en un DataFrame utilizando el método de la mediana para variables numéricas y el método de la moda para variables categóricas. También es posible utilizar el método de KNN (K-Nearest Neighbors) para imputar los valores faltantes.
 
-4. `EDA.standardize_variables(df, target, method="zscore", cols_exclude=[])`: Estandariza las variables numéricas en un DataFrame utilizando el método "z-score" (estandarización basada en la media y desviación estándar). Tambien estan disponibles otros metodos de estandarizacion 'minmax' y 'robust'
+4. `EDA.standardize_variables(df, target, method="zscore")`: Estandariza las variables numéricas en un DataFrame utilizando el método "z-score" (estandarización basada en la media y desviación estándar). Tambien estan disponibles otros metodos de estandarizacion 'minmax' y 'robust'
 
 5. `EDA.balance_data(df, target, oversampling=True)`: Realiza un muestreo aleatorio de los datos para balancear las clases en un problema de clasificación binaria. Esto ayuda a mitigar problemas de desequilibrio de clases en el conjunto de datos.
 
@@ -28,7 +28,7 @@ Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipu
 
 11. `EDA.remove_outliers(df, method='zscore', threshold=3)`: Elimine los valores atípicos de un DataFrame utilizando diferentes métodos. El método para eliminar valores atípicos puede ser 'zscore' (default) o 'iqr'.
 
-12. `EDA.perform_full_eda(df, target, cols_exclude=[], p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline para realizar varios (o todos) los pasos de la clase automáticamente.
+12. `EDA.perform_full_eda(df, target, p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline para realizar varios (o todos) los pasos de la clase automáticamente.
 
 #### Visualización de Datos (Graphs_eda)
 
