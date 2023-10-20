@@ -45,7 +45,7 @@ class DL(Tools):
         Args:
             df (pandas DataFrame): The DataFrame containing the data.
             target (str): The name of the target column.
-            problem_type (str): Can be 'classification', 'regression', or 'multiclass'.
+            problem_type (str): Can be 'classification' or 'regression'.
             num_units (int, optional): Number of units in each hidden layer. Default is 16.
             num_layers (int, optional): Number of hidden layers. Default is 1.
             num_class (int): Number of output classes. Default is 1.
@@ -86,7 +86,7 @@ class DL(Tools):
             activation_out = 'softmax'
             loss, metric = 'categorical_crossentropy', 'accuracy'
         else:
-            raise ValueError('options in problem_type: "regression", "classification" or "multiclass"')
+            raise ValueError('Options in problem_type: "regression" or "classification"')
 
         if grid:
             

@@ -41,4 +41,4 @@ notebook>=5.3
 ipywidgets>=7.5
 tensorflow==2.10.0
 keras-tuner==1.4.4
-virtualenv==20.24.5
+optuna==3.3.0
