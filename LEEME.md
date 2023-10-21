@@ -36,7 +36,7 @@ Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipu
 
 14. `Graphs_eda.histogram_plot(df, column)`: Genera un histograma interactivo para una columna específica del DataFrame.
 
-15. `Graphs_eda.box_plot(df, column_x, column_y)`: Genera un gráfico de caja interactivo para una variable y en función de otra variable x.
+15. `Graphs_eda.box_plot(df)`: Genera un diagrama de caja combinado para variables numéricas en un DataFrame o una sola Serie.
 
 16. `Graphs_eda.scatter_plot(df, column_x, column_y)`: Genera un gráfico de dispersión interactivo para dos variables x e y.
 

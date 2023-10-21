@@ -36,7 +36,7 @@ The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulatio
 
 14. `Graphs_eda.histogram_plot(df, column)`: Generates an interactive histogram for a specific column in the DataFrame.
 
-15. `Graphs_eda.box_plot(df, column_x, column_y)`: Generates an interactive box plot for a variable y based on another variable x.
+15. `Graphs_eda.box_plot(df)`: Generates a combined box plot for numerical variables in a DataFrame or a single Series.
 
 16. `Graphs_eda.scatter_plot(df, column_x, column_y)`: Generates an interactive scatter plot for two variables, x and y.
 

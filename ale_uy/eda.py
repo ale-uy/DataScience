@@ -480,7 +480,7 @@ class Graphs_eda:
         This method iterates through all the numerical columns in the DataFrame, creating density plots for each one.
         The density plots display the probability density of each numerical feature.
 
-        The plots are organized in a grid, with three plots per row, and the styling is set to 'whitegrid'.
+        The plots are organized in a grid, with two plots per row, and the styling is set to 'whitegrid'.
 
         Args:
         - df (DataFrame): The pandas DataFrame containing the data.
@@ -496,8 +496,8 @@ class Graphs_eda:
 
         # Define the plot size and the number of rows and columns in the grid
         num_plots = len(numeric_columns)
-        rows = (num_plots + 1) // 2  # Calculate the number of rows needed (three plots per row)
-        cols = 2  # Three plots per row
+        rows = (num_plots + 1) // 2  # Calculate the number of rows needed (two plots per row)
+        cols = 2  # Two plots per row
         _, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(8 * cols, 6 * rows))
 
         # Iterate through the numerical features and create the density plots
@@ -525,14 +525,35 @@ class Graphs_eda:
         fig.show()
 
     @classmethod
-    def box_plot(cls, df: pd.DataFrame, column_x: str, column_y: str) -> None:
+    def box_plot(cls, df: pd.Series or pd.DataFrame) -> None:
         """
-        Generates an interactive box plot for a variable y based on another variable x.
+        Generates a combined box plot for numerical variables in a DataFrame or a single Series.
+
         Parameters:
-            column_x (str): Name of the independent variable in the box plot.
-            column_y (str): Name of the dependent variable in the box plot.
+        - data (pd.Series or pd.DataFrame): The pandas DataFrame or Series containing the data.
+        This method can accept either a DataFrame with numerical variables or a single Series and generate
+        a combined box plot that displays the distribution of these variables in a single chart.
+
+        Args:
+        - data (pd.Series or pd.DataFrame): The pandas DataFrame or Series containing numerical variables.
+
+        Returns:
+        None
         """
-        fig = px.box(df, x=column_x, y=column_y)
+        if isinstance(df, pd.Series):
+            # If input is a Series, create a DataFrame with a single column
+            data = pd.DataFrame(df)
+        elif isinstance(df, pd.DataFrame):
+            data = df.copy()
+        else:
+            raise ValueError("Input must be a pandas DataFrame or Series containing numerical variables.")
+        # Melt the DataFrame to have all numerical variables in a single column
+        df_melted = pd.melt(data.select_dtypes(include=['float', 'int']))
+        # Define a custom color palette
+        custom_colors = px.colors.qualitative.Plotly  # You can change this to any other palette
+        # Generate a combined box plot with the custom color palette
+        fig = px.box(df_melted, x='variable', y='value', color='variable', color_discrete_sequence=custom_colors)
+        fig.update_layout(title='Box Plot')
         fig.show()
 
     @classmethod
