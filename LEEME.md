@@ -1,6 +1,6 @@
 ## Modulo [eda.py](): Manipulación de Datos
 
-Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipulaciones y visualizaciones de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento y limpieza de los datos.
+Las clases `eda.EDA`, `eda.Graphs_eda` y `eda.Multivariate` son una herramienta para realizar manipulaciones y visualizaciones de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento y limpieza de los datos.
 
 ### Métodos Disponibles
 
@@ -28,7 +28,7 @@ Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipu
 
 11. `EDA.remove_outliers(df, method='zscore', threshold=3)`: Elimine los valores atípicos de un DataFrame utilizando diferentes métodos. El método para eliminar valores atípicos puede ser 'zscore' (default) o 'iqr'.
 
-12. `EDA.perform_full_eda(df, target, p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline para realizar varios (o todos) los pasos de la clase automáticamente.
+12. `EDA.perform_pca(df, n_components='mle')`: Realiza un Análisis de Componentes Principales (PCA). Puedes usar 'mle' para una selección automática o especificar un número entero para un número fijo de componentes.
 
 #### Visualización de Datos (Graphs_eda)
 
@@ -45,6 +45,18 @@ Las clases `eda.EDA` y `eda.Graphs_eda` son una herramienta para realizar manipu
 18. `Graphs_eda.correlation_heatmap_plot(df)`: Genera un mapa de calor de correlación para el DataFrame dado.
 
 19. `Graphs_eda.numerical_plot_density(df)`: Genera gráficos de densidad para todas las variables numéricas.
+
+20. `Graphs_eda.pca_elbow_method_plot(cls, df, target_variance=0.95)`: Realiza un Análisis de Componentes Principales (PCA) y utiliza el método del codo para seleccionar el número de componentes. *target_variance (float)* es la varianza acumulativa objetivo.
+
+#### Análisis Multivariado (Multivariate)
+
+1. `Multivariate.perform_discriminant_analysis(cls, df, target)`: Realiza análisis discriminante lineal en los datos.
+
+2. `Multivariate.perform_multiple_correspondence_analysis(cls, df)`: Realiza un Análisis de Correspondencia Múltiple (MCA) en los datos.
+
+3. `Multivariate.perform_multiple_factor_analysis(df, groups='auto', num_factors='auto')`: Realiza un Análisis de Factores Múltiples (MFA) en los datos. *groups ('auto' o dict)*, especifica grupos como un diccionario o usa 'auto' para determinar grupos automáticamente. *num_factors (int o 'auto')*, el número de factores a extraer (el valor predeterminado es 'auto').
+
+4. `Multivariate.perform_factor_analysis(cls, df, num_factors='auto')`: Realiza Análisis de Factores (FA) en los datos utilizando la biblioteca Prince. *num_factors (int o 'auto')*, el número de factores a extraer (el valor predeterminado es 'auto').
 
 ## Modulo [ml.py](): Modelado de Datos
 

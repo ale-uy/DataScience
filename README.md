@@ -1,6 +1,6 @@
 ## Module [eda.py](): Data Manipulation
 
-The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulations and visualizations in a simple and efficient manner. These classes are designed to streamline various tasks related to data processing and cleaning.
+The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Multivariate* are tools for performing data manipulations and visualizations in a simple and efficient manner. These classes are designed to streamline various tasks related to data processing and cleaning.
 
 ### Available Methods
 
@@ -28,7 +28,7 @@ The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulatio
 
 11. `EDA.remove_outliers(df, method='zscore', threshold=3)`: Remove outliers from a DataFrame using different methods. The method to remove outliers, can be 'zscore' (default) or 'iqr'.
 
-12. `EDA.perform_full_eda(df, target, p=0.5, impute=True, imputation_method='median', n_neighbors=None, convert=True, conversion_method="ohe", drop_duplicate=True, drop_outliers=False, outliers_method='zscore', outliers_threshold=3, standardize=False, standardization_method="zscore", balance=False, balance_oversampling=True, shuffle=False)`: Pipeline to perform various (or all) steps of the class automatically.
+12. `EDA.perform_pca(df, n_components='mle')`: Perform Principal Component Analysis (PCA). You can use 'mle' for automatic selection or specify an integer for a fixed number of components.
 
 #### Data Visualization (Graphs_eda)
 
@@ -45,6 +45,18 @@ The classes eda.EDA and eda.Graphs_eda are tools for performing data manipulatio
 18. `Graphs_eda.correlation_heatmap_plot(df)`: Generates a correlation heatmap for the given DataFrame.
 
 19. `Graphs_eda.numerical_plot_density(df)`: Generate density plots for all numerical features in a DataFrame.
+
+20. `Graphs_eda.pca_elbow_method_plot(cls, df, target_variance=0.95)`: Perform PCA and use the elbow method to select the number of components. *target_variance (float)* is the target cumulative explained variance.
+
+#### Perform Multivariate Analysis (Multivariate)
+
+1. `Multivariate.perform_discriminant_analysis(cls, df, target)`: Perform linear discriminant analysis on the data.
+
+2. `Multivariate.perform_multiple_correspondence_analysis(cls, df)`:  Perform Multiple Correspondence Analysis (MCA) on the data.
+
+3. `Multivariate.perform_multiple_factor_analysis(df, groups='auto', num_factors='auto')`: Perform Multiple Factor Analysis (MFA) on the data. *groups ('auto' or dict)*, either specify groups as a dictionary or use 'auto' to determine groups automatically. *num_factors (int or 'auto')*, the number of factors to extract (default is 'auto').
+
+4. `Multivariate.perform_factor_analysis(cls, df, num_factors='auto')`: Perform Factor Analysis (FA) on the data using the Prince library. *num_factors (int or 'auto')*, the number of factors to extract (default is 'auto').
 
 ## Module [ml.py](): Data Modeling
 

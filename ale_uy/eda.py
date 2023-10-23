@@ -17,8 +17,11 @@ import seaborn as sns
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.impute import KNNImputer
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, RobustScaler, StandardScaler
 from imblearn.over_sampling import SMOTENC
+from prince import MCA, MFA, FAMD
 
 
 class EDA:
@@ -363,85 +366,22 @@ class EDA:
         return cleaned_df
 
     @classmethod
-    def perform_full_eda(cls, df: pd.DataFrame,
-                         target: str,
-                         p=0.5,
-                         impute=True,
-                         imputation_method='mm',
-                         n_neighbors=None,
-                         drop_duplicate=True,
-                         convert=True,
-                         conversion_method="ohe",
-                         drop_outliers=False,
-                         outliers_method='zscore',
-                         outliers_threshold=3,
-                         standardize=False,
-                         standardization_method="zscore",
-                         balance=False,
-                         balance_oversampling=True,
-                         shuffle=False):
+    def perform_pca(df, n_components='mle'):
         """
-        Performs a complete Exploratory Data Analysis (EDA) on a given DataFrame.
+        Perform Principal Component Analysis (PCA).
 
         Parameters:
-            df (pandas DataFrame): The DataFrame with the data to analyze.
-            target (str): The name of the column containing the target variable.
-            cols_exclude (list, optional): Columns that we do not want to transform.
-            balance (bool, optional): If True, balances the data based on the target variable.
-                                      Default is False.
-            p (float, optional): Threshold to remove columns with missing values in more than p fraction of rows.
-                                 Default is 0.5 (remove columns with over 50% missing values).
-            impute (bool, optional): If True, imputes missing values in the DataFrame after removing columns with missing values.
-                    Default is True.
-            imputation_method (str, optional): The imputation method to use if impute=True. Valid options:
-                    "mm" (default) to impute median for numeric variables and mode for categorical,
-                    "knn" to use KNNImputer.
-            n_neighbors (int, optional): The number of nearest neighbors to use in the KNNImputer method.
-                    Only applicable if imputation_method="knn".
-            drop_duplicate (bool, optional): Remove duplicate rows from a DataFrame. Default True.
-            convert (bool, optional): Performs the encoding of categorical variables. Default True.
-            conversion_method (str, optional): If convert is True, use 'ohe' (default), 'dummy' or 'label'.
-            drop_outliers (bool, optional): Remove outliers from a pandas DataFrame. Default False.
-            outliers_method (str, optional): If drop_outliers is True, use 'zscore' (default) or 'iqr'.
-            outliers_threshold (int, optional): If drop_outliera is True, the threshold for considering a value as an outlier.
-            standardize (bool, optional): If True, standardizes numeric variables in the DataFrame after imputing missing values.
-                                         Default is False.
-            standardization_method (str, optional): The standardization method to use if standardize=True.
-                    Valid options:
-                        "zscore" (default) for Z-score standardization,
-                        "minmax" for Min-Max scaling,
-                        "robust" for Robust scaling.
-            balance (bool, optional):
-            balance_oversampling (bool, optional):
-            shuffle (bool, optional): If True, shuffles the data in the DataFrame. Default is False.
+        - df (pd.DataFrame or array-like): The data to perform PCA on.
+        - n_components (str or int): Number of components to keep. You can use 'mle' for automatic selection
+          or specify an integer for a fixed number of components.
 
         Returns:
-            pandas DataFrame: The DataFrame with cleaned and processed data after applying the full EDA.
-
-        Usage Example:
-            cleaned_df = Eda.perform_full_eda(df, target="target", balance=True, 
-                                              p=0.3, impute=True, imputation_method="knn", 
-                                              n_neighbors=5, standardize=True, 
-                                              standardization_method="zscore", shuffle=True)
+        - transformed_df (pd.DataFrame): The data transformed to the new feature space.
         """
-        df_cleaned = cls.remove_single_value_columns(df)
-        df_cleaned = cls.remove_missing_if(df_cleaned, p)
-        if impute:
-            df_cleaned = cls.impute_missing(df_cleaned, imputation_method, n_neighbors)
-        if drop_duplicate:
-            df_cleaned = cls.remove_duplicate(df_cleaned)
-        if standardize:
-            df_cleaned = cls.standardize_variables(df_cleaned, target, method=standardization_method)
-        if convert:
-            df_cleaned = cls.convert_to_numeric(df_cleaned, target, method=conversion_method)
-        if drop_outliers:
-            df_cleaned = cls.remove_outliers(df_cleaned, method=outliers_method, threshold=outliers_threshold)
-        if balance:
-            df_cleaned = cls.balance_data(df_cleaned, target, oversampling=balance_oversampling)
-        if shuffle:
-            df_cleaned = cls.shuffle_data(df_cleaned)
-        return df_cleaned
-    
+        pca = PCA(n_components=n_components)
+        transformed_df = pca.fit_transform(df)
+        return pd.DataFrame(transformed_df, columns=[f'PC{i}' for i in range(1, pca.n_components_ + 1)])
+
 
 class Graphs_eda:
 
@@ -615,3 +555,149 @@ class Graphs_eda:
         corr = df.corr()
         plt.figure(figsize=(12, 10))
         sns.heatmap(corr, linewidth=0.5, annot=True, cmap="RdBu", vmin=-1, vmax=1)
+
+    @classmethod
+    def pca_elbow_method_plot(cls, df, target_variance=0.95) -> None:
+        """
+        Perform PCA and use the elbow method to select the number of components.
+
+        Parameters:
+        - df (pd.DataFrame or array-like): The data to perform PCA on.
+        - target_variance (float): The target cumulative explained variance.
+
+        Print:
+        - num_components (int): The number of components selected.
+        """
+        pca = PCA()
+        pca.fit(df)
+
+        explained_variance = pca.explained_variance_ratio_
+        cum_variance = np.cumsum(explained_variance)
+
+        # Calculate x values with a step of 2
+        x_values = list(range(1, len(explained_variance) + 1, 1))
+        cum_variance_values = [cum_variance[i - 1] for i in x_values]
+
+        fig = px.line(x=x_values, y=cum_variance_values, markers=True, line_shape='linear')
+        fig.update_layout(
+            title='Explained Variance vs. Number of Components',
+            xaxis_title='Number of Components',
+            yaxis_title='Cumulative Explained Variance'
+        )
+        fig.show()
+
+        # Determine the number of components based on the target variance
+        num_components = np.where(cum_variance >= target_variance)[0][0] + 1
+        print(f'Number of components to achieve the {target_variance} target variance = {num_components}')
+
+
+class Multivariate:
+
+    @classmethod
+    def perform_discriminant_analysis(cls, df, target):
+        """
+        Perform linear discriminant analysis on the data.
+
+        Parameters:
+        - df (pd.DataFrame): The DataFrame containing the predictor variables.
+        - target (str): The Series containing the class labels.
+
+        Returns:
+        - lda_model (LinearDiscriminantAnalysis): The Linear Discriminant Analysis model fitted to the data.
+        """
+        X = df.drop(target, axis=1)
+        y = df['target']
+        lda_model = LinearDiscriminantAnalysis()
+        lda_model.fit(X, y)
+
+        return lda_model
+
+    @classmethod
+    def perform_multiple_correspondence_analysis(cls, df):
+        """
+        Perform Multiple Correspondence Analysis (MCA) on the data.
+
+        Parameters:
+        - df (pd.DataFrame): The data containing both categorical and numerical columns.
+
+        Returns:
+        - mca (MCA object): The MCA model fitted to the data.
+        """
+        # Identify the categorical columns
+        categorical_columns = df.select_dtypes(include=['object']).columns.tolist()
+
+        # Convert the categorical columns to numerical using one-hot encoding
+        data_encoded = pd.get_dummies(df, columns=categorical_columns)
+
+        # Perform MCA on the encoded data
+        mca = MCA()
+        mca.fit(data_encoded)
+
+        return mca
+    
+    @classmethod
+    def perform_multiple_factor_analysis(df, groups='auto', num_factors='auto'):
+        """
+        Perform Multiple Factor Analysis (MFA) on the data.
+
+        Parameters:
+        - df (pd.DataFrame): The data containing both numerical and categorical variables.
+        - groups ('auto' or dict): Either specify groups as a dictionary or use 'auto' to determine groups automatically.
+        - num_factors (int or 'auto'): The number of factors to extract (default is 'auto').
+
+        Returns:
+        - mfa (MFA object): The MFA model fitted to the data.
+        """
+        if groups == 'auto':
+            # Determine variable types (numerical and categorical)
+            numerical_vars = df.select_dtypes(include=['int', 'float']).columns
+            categorical_vars = df.select_dtypes(include=['object', 'category']).columns
+
+            # Create groups automatically
+            groups = {'Numerical': list(numerical_vars), 'Categorical': list(categorical_vars)}
+
+        # Create a list of lists containing the variable names for each group
+        variables_per_group = [group_vars for group_vars in groups.values()]
+
+        # Create the MFA model
+        mfa = MFA(groups=variables_per_group, n_components=num_factors)
+
+        if num_factors == 'auto':
+            # Determine the number of factors using the Kaiser-Guttman criterion
+            mca_model = MCA()
+            mca_model.fit(df)
+            eigenvalues = mca_model.eigenvalues_
+            num_factors = sum(eigenvalues > 1)
+
+        mfa.n_components = num_factors
+        mfa.fit(df)
+
+        return mfa
+
+    @classmethod
+    def perform_factor_analysis(cls, df, num_factors='auto'):
+        """
+        Perform Factor Analysis (FA) on the data using the Prince library.
+
+        Parameters:
+        - df (pd.DataFrame): The data for factor analysis.
+        - num_factors (int or 'auto'): The number of factors to extract (default is 'auto').
+
+        Returns:
+        - fa (FactorAnalysis object): The FA model fitted to the data.
+        """
+        if num_factors == 'auto':
+            # Determine the number of factors using the Kaiser-Guttman criterion
+            mca_model = MCA()
+            mca_model.fit(df)
+            eigenvalues = mca_model.eigenvalues_
+            num_factors = sum(eigenvalues > 1)
+
+        # Create the FactorAnalysis model
+        fa = FAMD(n_components=num_factors)
+
+        # Fit the model to the data
+        fa.fit(df)
+
+        return fa
+    
