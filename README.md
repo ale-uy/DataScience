@@ -52,15 +52,6 @@ The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Models* are tools for performin
 
 1. `Models.perform_model(df, target, type_model='linear')`: This method fits a specified type of regression model to the provided data. It supports linear, logistic, Poisson, and robust linear regression models. The results of the regression are printed, and the model is returned. *type_model* = 'linear' (default), 'logit', 'poisson', 'robust'.
 
-2. `Models.perform_anova(df, dependent_var, group_var, covariate_vars=None)`: This method performs either a general ANOVA or ANCOVA based on the presence of covariate variables. If 'covariate_vars' is provided, an ANCOVA is performed. If 'covariate_vars' is None, an ANOVA is performed.
-
-3. `Models.perform_diagnostic_plots(model)`: This function creates diagnostic plots and tests for a regression model, including:
-    - Residuals vs. Fitted Values Plot
-    - Q-Q Plot of Residuals
-    - Shapiro-Wilk Normality Test of Residuals
-    - Breusch-Pagan Test of Homoscedasticity
-    - Displaying the regression model summary.
-
 ## Module [ml.py](): Data Modeling
 
 The classes `ml.ML`, `ml.Graphs_ml`, and `ml.Tools` are a tool for performing modeling, data manipulation, and visualization of data in a simple and efficient manner. These classes are designed to facilitate various tasks related to data processing, training, and evaluation of machine learning models.

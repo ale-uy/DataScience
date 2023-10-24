@@ -52,15 +52,6 @@ Las clases `eda.EDA`, `eda.Graphs_eda` y `eda.Multivariate` son una herramienta 
 
 1. `Models.perform_model(df, target, type_model='linear')`: Este método ajusta un tipo especificado de modelo de regresión a los datos proporcionados. Admite modelos de regresión lineal, logística, de Poisson y de regresión lineal robusta. Los resultados de la regresión se imprimen, y se devuelve el modelo. *type_model* = 'linear' (por defecto), 'logit', 'poisson', 'robust'.
 
-2. `Models.perform_anova(df, dependent_var, group_var, covariate_vars=None)`: Este metodo realiza ya sea un ANOVA general o un ANCOVA en función de la presencia de variables covariables. Si se proporcionan 'covariate_vars', se realiza un ANCOVA. Si 'covariate_vars' es None, se realiza un ANOVA.
-
-3. `Models.perform_diagnostic_plots(model)`: Esta función crea gráficos y pruebas diagnósticas para un modelo de regresión, que incluyen:
-    - Gráfico de Residuos vs. Valores Ajustados
-    - Gráfico Q-Q de los Residuos
-    - Prueba de Normalidad de Shapiro-Wilk de los Residuos
-    - Prueba de Breusch-Pagan para la Homocedasticidad
-    - Visualización del resumen del modelo de regresión.
-
 ## Modulo [ml.py](): Modelado de Datos
 
 Las clases `ml.ML`, `ml.Graphs_ml` y `ml.Tools` son una herramienta para realizar modelados, manipulación y visualización de datos de manera sencilla y eficiente. Estas clases están diseñadas para facilitar diversas tareas relacionadas con el procesamiento, entrenamiento y evaluación de modelos de aprendizaje automático.
