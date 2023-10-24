@@ -42,4 +42,3 @@ ipywidgets>=7.5
 tensorflow==2.10.0
 keras-tuner==1.4.4
 optuna==3.3.0
-prince==0.10.8

@@ -1,6 +1,6 @@
 ## Module [eda.py](): Data Manipulation
 
-The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Multivariate* are tools for performing data manipulations and visualizations in a simple and efficient manner. These classes are designed to streamline various tasks related to data processing and cleaning.
+The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Models* are tools for performing data manipulations and visualizations in a simple and efficient manner. These classes are designed to streamline various tasks related to data processing and cleaning.
 
 ### Available Methods
 
@@ -46,17 +46,20 @@ The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Multivariate* are tools for per
 
 19. `Graphs_eda.numerical_plot_density(df)`: Generate density plots for all numerical features in a DataFrame.
 
-20. `Graphs_eda.pca_elbow_method_plot(cls, df, target_variance=0.95)`: Perform PCA and use the elbow method to select the number of components. *target_variance (float)* is the target cumulative explained variance.
+20. `Graphs_eda.pca_elbow_method_plot(df, target_variance=0.95)`: Perform PCA and use the elbow method to select the number of components. *target_variance (float)* is the target cumulative explained variance.
 
-#### Perform Multivariate Analysis (Multivariate)
+#### Perform Models Regression and Classification (Models)
 
-1. `Multivariate.perform_discriminant_analysis(cls, df, target)`: Perform linear discriminant analysis on the data.
+1. `Models.perform_model(df, target, type_model='linear')`: This method fits a specified type of regression model to the provided data. It supports linear, logistic, Poisson, and robust linear regression models. The results of the regression are printed, and the model is returned. *type_model* = 'linear' (default), 'logit', 'poisson', 'robust'.
 
-2. `Multivariate.perform_multiple_correspondence_analysis(cls, df)`:  Perform Multiple Correspondence Analysis (MCA) on the data.
+2. `Models.perform_anova(df, dependent_var, group_var, covariate_vars=None)`: This method performs either a general ANOVA or ANCOVA based on the presence of covariate variables. If 'covariate_vars' is provided, an ANCOVA is performed. If 'covariate_vars' is None, an ANOVA is performed.
 
-3. `Multivariate.perform_multiple_factor_analysis(df, groups='auto', num_factors='auto')`: Perform Multiple Factor Analysis (MFA) on the data. *groups ('auto' or dict)*, either specify groups as a dictionary or use 'auto' to determine groups automatically. *num_factors (int or 'auto')*, the number of factors to extract (default is 'auto').
-
-4. `Multivariate.perform_factor_analysis(cls, df, num_factors='auto')`: Perform Factor Analysis (FA) on the data using the Prince library. *num_factors (int or 'auto')*, the number of factors to extract (default is 'auto').
+3. `Models.perform_diagnostic_plots(model)`: This function creates diagnostic plots and tests for a regression model, including:
+    - Residuals vs. Fitted Values Plot
+    - Q-Q Plot of Residuals
+    - Shapiro-Wilk Normality Test of Residuals
+    - Breusch-Pagan Test of Homoscedasticity
+    - Displaying the regression model summary.
 
 ## Module [ml.py](): Data Modeling
 

@@ -2,7 +2,7 @@
 """
 Author: ale-uy
 Date: 05/2023
-Updated: 09/2023
+Updated: 10/2023
 Version: v2
 File: eda.py
 Description: Automate data analysis and cleaning processes
@@ -14,14 +14,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
 import seaborn as sns
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.impute import KNNImputer
 from sklearn.decomposition import PCA
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, RobustScaler, StandardScaler
 from imblearn.over_sampling import SMOTENC
-from prince import MCA, MFA, FAMD
+
 
 
 class EDA:
@@ -591,113 +592,154 @@ class Graphs_eda:
         print(f'Number of components to achieve the {target_variance} target variance = {num_components}')
 
 
-class Multivariate:
-
-    @classmethod
-    def perform_discriminant_analysis(cls, df, target):
-        """
-        Perform linear discriminant analysis on the data.
-
-        Parameters:
-        - df (pd.DataFrame): The DataFrame containing the predictor variables.
-        - target (str): The Series containing the class labels.
-
-        Returns:
-        - lda_model (LinearDiscriminantAnalysis): The Linear Discriminant Analysis model fitted to the data.
-        """
-        X = df.drop(target, axis=1)
-        y = df['target']
-        lda_model = LinearDiscriminantAnalysis()
-        lda_model.fit(X, y)
-
-        return lda_model
-
-    @classmethod
-    def perform_multiple_correspondence_analysis(cls, df):
-        """
-        Perform Multiple Correspondence Analysis (MCA) on the data.
-
-        Parameters:
-        - df (pd.DataFrame): The data containing both categorical and numerical columns.
-
-        Returns:
-        - mca (MCA object): The MCA model fitted to the data.
-        """
-        # Identify the categorical columns
-        categorical_columns = df.select_dtypes(include=['object']).columns.tolist()
-
-        # Convert the categorical columns to numerical using one-hot encoding
-        data_encoded = pd.get_dummies(df, columns=categorical_columns)
-
-        # Perform MCA on the encoded data
-        mca = MCA()
-        mca.fit(data_encoded)
-
-        return mca
+class Models:
     
     @classmethod
-    def perform_multiple_factor_analysis(df, groups='auto', num_factors='auto'):
+    def perform_model(cls, df, target, type_model='linear'):
         """
-        Perform Multiple Factor Analysis (MFA) on the data.
+        Perform a regression model using Statsmodels.
 
         Parameters:
-        - df (pd.DataFrame): The data containing both numerical and categorical variables.
-        - groups ('auto' or dict): Either specify groups as a dictionary or use 'auto' to determine groups automatically.
-        - num_factors (int or 'auto'): The number of factors to extract (default is 'auto').
+        df (pandas.DataFrame): The DataFrame containing the data.
+        target (str): The name of the dependent variable column.
+        type_model (str): The type of regression model to perform ('linear' (default), 'logit', 'poisson', 'robust').
 
         Returns:
-        - mfa (MFA object): The MFA model fitted to the data.
+        results (statsmodels.regression.linear_model.RegressionResultsWrapper): The results of the regression.
+
+        This class method fits a specified type of regression model to the provided data using Statsmodels.
+        It supports linear, logistic, Poisson, and robust linear regression models. The results of the regression
+        are printed, and the results object is returned.
+
+        Example:
+        results = RegressionModel.perform_model(df, 'DependentVariable', 'linear')
         """
-        if groups == 'auto':
-            # Determine variable types (numerical and categorical)
-            numerical_vars = df.select_dtypes(include=['int', 'float']).columns
-            categorical_vars = df.select_dtypes(include=['object', 'category']).columns
+        # Prepare the data
+        X = df.drop(target, axis=1)
+        y = df[target]
 
-            # Create groups automatically
-            groups = {'Numerical': list(numerical_vars), 'Categorical': list(categorical_vars)}
+        # Add a constant to the independent variable (intercept)
+        X = sm.add_constant(X)
 
-        # Create a list of lists containing the variable names for each group
-        variables_per_group = [group_vars for group_vars in groups.values()]
-
-        # Create the MFA model
-        mfa = MFA(groups=variables_per_group, n_components=num_factors)
-
-        if num_factors == 'auto':
-            # Determine the number of factors using the Kaiser-Guttman criterion
-            mca_model = MCA()
-            mca_model.fit(df)
-            eigenvalues = mca_model.eigenvalues_
-            num_factors = sum(eigenvalues > 1)
-
-        mfa.n_components = num_factors
-        mfa.fit(df)
-
-        return mfa
-
-    @classmethod
-    def perform_factor_analysis(cls, df, num_factors='auto'):
-        """
-        Perform Factor Analysis (FA) on the data using the Prince library.
-
-        Parameters:
-        - df (pd.DataFrame): The data for factor analysis.
-        - num_factors (int or 'auto'): The number of factors to extract (default is 'auto').
-
-        Returns:
-        - fa (FactorAnalysis object): The FA model fitted to the data.
-        """
-        if num_factors == 'auto':
-            # Determine the number of factors using the Kaiser-Guttman criterion
-            mca_model = MCA()
-            mca_model.fit(df)
-            eigenvalues = mca_model.eigenvalues_
-            num_factors = sum(eigenvalues > 1)
-
-        # Create the FactorAnalysis model
-        fa = FAMD(n_components=num_factors)
+        if type_model.lower() == 'linear':
+            # Create a linear regression model
+            model = sm.OLS(y, X)
+        elif type_model.lower() == 'logit':
+            # Create a logistic regression model
+            model = sm.Logit(y, X)
+        elif type_model.lower() == 'poisson':
+            # Create a Poisson regression model
+            model = sm.GLM(y, sm.add_constant(X), family=sm.families.Poisson())
+        elif type_model.lower() == 'robust':
+            # Create a robust linear regression model
+            model = sm.RLM(y, sm.add_constant(X), M=sm.robust.norms.HuberT())
+        else:
+            raise ValueError("Valid type_model values: 'linear' (default), 'logit', 'poisson', 'robust'")
 
         # Fit the model to the data
-        fa.fit(df)
+        results = model.fit()
 
-        return fa
+        # Print the summary of the regression results
+        print(results.summary())
+
+        return results
+
+    @classmethod
+    def perform_anova(df, dependent_var, group_var, covariate_vars=None):
+        """
+        Perform a general ANOVA or ANCOVA using Statsmodels.
+
+        Parameters:
+        df (pandas.DataFrame): The DataFrame containing the data.
+        dependent_var (str): The name of the dependent variable.
+        group_var (str): The name of the categorical grouping variable.
+        covariate_vars (list, optional): A list of covariate variable names. If None, performs ANOVA.
+
+        Returns:
+        results (statsmodels.regression.linear_model.RegressionResultsWrapper): The results of the ANOVA or ANCOVA.
+
+        This function performs either a general ANOVA or ANCOVA based on the presence of covariate variables.
+        If 'covariate_vars' is provided, an ANCOVA is performed. If 'covariate_vars' is None, an ANOVA is performed.
+
+        Example:
+        # Perform ANOVA
+        results = perform_anova(df, 'DependentVariable', 'GroupVariable')
+        
+        # Perform ANCOVA with multiple covariate variables
+        results = perform_anova(df, 'DependentVariable', 'GroupVariable', ['Covariate1', 'Covariate2'])
+        
+        # Perform ANCOVA with a single covariate variable
+        results = perform_anova(df, 'DependentVariable', 'GroupVariable', ['CovariateVariable'])
+        """
+        # Create a formula string for the model
+        formula = f'{dependent_var} ~ C({group_var})'
+        if covariate_vars is not None:
+            formula += ' + ' + ' + '.join(covariate_vars)
+
+        # Fit the ANOVA or ANCOVA model
+        model = smf.ols(formula, data=df)
+        results = model.fit()
+
+        # Print the summary of the ANOVA or ANCOVA results
+        print(results.summary())
+
+        return results
     
+    @classmethod
+    def perform_diagnostic_plots(cls, model) -> None:
+        """
+        Perform a diagnostic analysis of a regression model.
+
+        Args:
+            model: A fitted regression model.
+
+        This function creates diagnostic plots and tests for a regression model, including:
+        - Residuals vs. Fitted Values Plot
+        - Q-Q Plot of Residuals
+        - Shapiro-Wilk Normality Test of Residuals
+        - Breusch-Pagan Test of Homoscedasticity
+        - Displaying the regression model summary.
+
+        The diagnostic plots are displayed in a 2-column grid.
+
+        Returns:
+            None
+        """
+        # Residuals
+        residuals = model.resid
+
+        # Create a subplot with two columns
+        _, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+        # Residuals vs. Fitted Values Plot
+        axes[0].scatter(model.fittedvalues, residuals)
+        axes[0].set_xlabel("Fitted Values")
+        axes[0].set_ylabel("Residuals")
+        axes[0].set_title("Residuals vs. Fitted Values")
+
+        # Q-Q Plot of Residuals
+        sm.qqplot(residuals, line='s', ax=axes[1])
+        axes[1].set_title("Q-Q Plot of Residuals")
+
+        # Show the plots
+        plt.tight_layout()
+        plt.show()
+
+        # Shapiro-Wilk Normality Test of Residuals
+        from scipy import stats
+        normality_test = stats.shapiro(residuals)
+        print("Shapiro-Wilk Normality Test of Residuals:")
+        print("Test Statistic =", normality_test[0])
+        print("P-value =", normality_test[1])
+
+        # Breusch-Pagan Test of Homoscedasticity
+        from statsmodels.stats.diagnostic import het_breuschpagan
+        het_test = het_breuschpagan(residuals, model.model.exog)
+        print("\nBreusch-Pagan Test of Homoscedasticity:")
+        print("LM Statistic =", het_test[0])
+        print("P-value =", het_test[1])
+
+        # Print the regression model summary
+        print("\nRegression Model Summary:")
+        print(model.summary())
+
