@@ -48,12 +48,11 @@ class EDA:
         print(df.select_dtypes('number').describe().T)
 
     @classmethod
-    def convert_to_numeric(cls, df: pd.DataFrame, target: str, method="ohe", drop_first=True):
+    def convert_to_numeric(cls, df: pd.DataFrame, method="ohe", drop_first=True):
         """
         Performs the encoding of categorical variables using different methods.
         Parameters:
             df (pandas DataFrame): The DataFrame containing the variables to be encoded.
-            target (str): The name of the target column that will not be encoded.
             method (str): The encoding method to use. Valid options:
                 - "dummy": Dummy encoding.
                 - "ohe": One-Hot Encoding.
@@ -63,31 +62,20 @@ class EDA:
             pandas DataFrame: The original DataFrame with the categorical columns encoded, excluding the target column.
         """
 
-        # Separate the target column 'y' from the rest of the dataset 'X'
-        y = df[target]
-        if not np.issubdtype(y.dtype, np.number):
-            # If 'y' is not numeric, convert it using LabelEncoder
-            label_encoder = LabelEncoder()
-            y_encoded = label_encoder.fit_transform(df[target])
-            y = pd.Series(y_encoded, name=target)  # type: ignore
-        X = df.drop(target, axis=1)
-
         # Use the specified encoding method
         if method == "dummy":
             """
             Performs dummy encoding on categorical variables in the DataFrame.
             Parameters:
                 df (pandas DataFrame): The DataFrame containing the categorical variables.
-                target (str): The name of the target column that will not be encoded.
                 drop_first (bool): Drops the first dummy. Default is True.
             Returns:
                 pandas DataFrame: The original DataFrame with the categorical columns encoded using
                 the dummy method, excluding the target column.
             """
             # Convert to dummy
-            X = pd.get_dummies(X, drop_first=drop_first)
-            # Concatenate the imputed DataFrame with the encoded categorical columns to DataFrame 'Xy'
-            encoded_df = pd.concat([X, y], axis=1)
+            encoded_df = pd.get_dummies(df, drop_first=drop_first)
+
         elif method == "ohe":
             """
             This method performs One-Hot Encoding for all categorical columns in the DataFrame, 
@@ -100,24 +88,22 @@ class EDA:
             # Create the OneHotEncoder with 'drop' option set to 'first' to avoid the dummy variable trap (collinearity).
             encoder = OneHotEncoder(sparse_output=False, drop='first')
             # Get automatically identified categorical columns based on their 'object' data type
-            object_columns = X.select_dtypes(include=['object']).columns
+            object_columns = df.select_dtypes(include=['object']).columns
             # Apply One-Hot Encoding to the selected categorical columns and generate a new DataFrame
-            encoded_df = pd.DataFrame(encoder.fit_transform(X[object_columns]))
+            encoded_df = pd.DataFrame(encoder.fit_transform(df[object_columns]))
             # Assign column names to the new DataFrame based on the original feature names
             encoded_df.columns = encoder.get_feature_names_out(object_columns)
             # Drop the original categorical columns from DataFrame 'X'
-            X = X.drop(object_columns, axis=1).reset_index(drop=True)
-            # Reset the index of X and encoded_df to start from 1 instead of 0
-            X.index = y.index  # TEMPORARY SOLUTION #
-            encoded_df.index = y.index  # TEMPORARY SOLUTION #
-            # Concatenate the imputed DataFrame with the encoded categorical columns to DataFrame 'Xy'
-            encoded_df = pd.concat([X, encoded_df, y], axis=1)
+            X = df.drop(object_columns, axis=1).reset_index(drop=True)
+            # Concatenate the imputed DataFrame with the encoded categorical columns
+            encoded_df = pd.concat([X, encoded_df], axis=1)
+
         elif method == "label":
             """
             Performs the encoding of categorical variables using LabelEncoder.
             Returns:
                 pandas DataFrame: The original DataFrame with the categorical columns encoded
-                using LabelEncoder, INCLUDING the target column.
+                using LabelEncoder.
             """
             # Create a copy of the DataFrame 'df' for encoding
             encoded_df = df.copy(deep=True)
@@ -127,8 +113,10 @@ class EDA:
             label_encoders = {col: LabelEncoder() for col in object_columns}
             for col in object_columns:
                 encoded_df[col] = label_encoders[col].fit_transform(encoded_df[col])
+                
         else:
             raise ValueError("The 'method' parameter must be one of: 'dummy', 'ohe', 'label'.")
+        
         # Return the complete 'encoded_df' DataFrame with the encoded categorical columns
         return encoded_df
 
@@ -182,6 +170,7 @@ class EDA:
             knn_imputer = KNNImputer(n_neighbors=n_neighbors_best)
             df_imputed = knn_imputer.fit_transform(df)
             df_imputed = pd.DataFrame(df_imputed, columns=df.columns)
+
         elif method == 'mm':
             """
             Impute the median value for missing values in numeric variables
@@ -199,6 +188,7 @@ class EDA:
                     df_imputed[col].fillna(median, inplace=True)
         else:
             raise ValueError('methods options: "mm" and "knn"')
+        
         return df_imputed
         
     @classmethod
@@ -223,7 +213,7 @@ class EDA:
         return shuffled_df
     
     @classmethod
-    def standardize_variables(cls, df: pd.DataFrame, target: str, method="zscore"):
+    def standardize_variables(cls, df: pd.DataFrame, method="zscore"):
         """
         Standardizes numeric variables in a DataFrame using the specified method.
         Parameters:
@@ -233,13 +223,11 @@ class EDA:
                 - 'minmax': Standardization using Min-Max (range 0 to 1).
                 - 'robust': Robust standardization using medians and quartiles.
                 Default = zscore
-            cols_exclude (list, optional): Columns that we do not want to transform.
         Returns:
             pandas DataFrame: The original DataFrame with standardized numeric variables.
         """
 
-        y = df[target]
-        aux = df.drop(columns=target, axis=1)
+        aux = df.copy(deep=True)
         if method == 'zscore':
             scaler = StandardScaler()
         elif method == 'minmax':
@@ -248,12 +236,12 @@ class EDA:
             scaler = RobustScaler()
         else:
             raise ValueError("The 'method' parameter must be one of: 'zscore', 'minmax', 'robust'.")
+        
         aux[aux.select_dtypes(include='number').columns] = scaler.fit_transform(aux.select_dtypes(include='number'))
-        aux = pd.concat([aux, y], axis=1)
         return aux
     
     @classmethod
-    def apply_log1p_transformation(cls, df):
+    def apply_log1p_transformation(cls, df: pd.DataFrame):
         """
         Apply np.log1p transformation to non-negative numerical columns in a DataFrame.
 
@@ -274,6 +262,7 @@ class EDA:
         for column in numeric_columns:
             if (df_transformed[column] >= 0).all():
                 df_transformed[column] = np.log1p(df_transformed[column])
+
         return df_transformed
 
     @classmethod
@@ -339,7 +328,7 @@ class EDA:
         return cleaned_df
         
     @classmethod
-    def remove_outliers(cls, df: pd.DataFrame, method='zscore', threshold=3) -> pd.DataFrame:
+    def remove_outliers(cls, df: pd.DataFrame, method='zscore', threshold=np.inf) -> pd.DataFrame:
         """
        Remove outliers from a pandas DataFrame using different methods.
 
@@ -411,7 +400,7 @@ class Graphs_eda:
         plt.show()
 
     @classmethod
-    def numerical_plot_density(cls, df):
+    def numerical_plot_density(cls, df: pd.DataFrame) -> None:
         """
         Generate density plots for all numerical features in a DataFrame.
 
@@ -558,7 +547,7 @@ class Graphs_eda:
         sns.heatmap(corr, linewidth=0.5, annot=True, cmap="RdBu", vmin=-1, vmax=1)
 
     @classmethod
-    def pca_elbow_method_plot(cls, df, target_variance=0.95) -> None:
+    def pca_elbow_method_plot(cls, df: pd.DataFrame, target_variance=0.95) -> None:
         """
         Perform PCA and use the elbow method to select the number of components.
 
@@ -595,7 +584,7 @@ class Graphs_eda:
 class Models:
     
     @classmethod
-    def perform_model(cls, df, target, type_model='linear'):
+    def perform_model(cls, df: pd.DataFrame, target: str, type_model='linear'):
         """
         Perform a regression model using Statsmodels.
 

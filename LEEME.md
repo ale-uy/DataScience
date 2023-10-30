@@ -12,7 +12,7 @@ Las clases `eda.EDA`, `eda.Graphs_eda` y `eda.Multivariate` son una herramienta 
 
 3. `EDA.impute_missing(df, method="mm", n_neighbors=None)`: Imputa los valores faltantes en un DataFrame utilizando el método de la mediana para variables numéricas y el método de la moda para variables categóricas. También es posible utilizar el método de KNN (K-Nearest Neighbors) para imputar los valores faltantes.
 
-4. `EDA.standardize_variables(df, target, method="zscore")`: Estandariza las variables numéricas en un DataFrame utilizando el método "z-score" (estandarización basada en la media y desviación estándar). Tambien estan disponibles otros metodos de estandarizacion 'minmax' y 'robust'
+4. `EDA.standardize_variables(df, method="zscore")`: Estandariza las variables numéricas en un DataFrame utilizando el método "z-score" (estandarización basada en la media y desviación estándar). Tambien estan disponibles otros metodos de estandarizacion 'minmax' y 'robust'
 
 5. `EDA.balance_data(df, target, oversampling=True)`: Realiza un muestreo aleatorio de los datos para balancear las clases en un problema de clasificación binaria. Esto ayuda a mitigar problemas de desequilibrio de clases en el conjunto de datos.
 
@@ -20,7 +20,7 @@ Las clases `eda.EDA`, `eda.Graphs_eda` y `eda.Multivariate` son una herramienta 
 
 7. `EDA.numeric_statistics(df)`: Genera datos estadísticos de las variables numéricas en el DataFrame.
 
-8. `EDA.convert_to_numeric(df, target, method="ohe", drop_first=True)`: Realiza la codificación de variables categóricas utilizando diferentes métodos. Ademas de "ohe" (one-hot-encode) se puede seleccionar "dummy" y "label" (label-encode)
+8. `EDA.convert_to_numeric(df, method="ohe", drop_first=True)`: Realiza la codificación de variables categóricas utilizando diferentes métodos. Ademas de "ohe" (one-hot-encode) se puede seleccionar "dummy" y "label" (label-encode)
 
 9. `EDA.analyze_nulls(df)`: Devuelve el porcentaje de valores nulos en todo el conjunto de datos para cada columna.
 
@@ -79,9 +79,7 @@ Las clases `ml.ML`, `ml.Graphs_ml` y `ml.Tools` son una herramienta para realiza
 
 9. `Tools.generate_soft_clusters(...)`: Aplica Gaussian Mixture Models (GMM) al dataframe para generar una tabla con las probabilidades de pertencia de cada observacion al cluster especifico. Dentro del docstring se pueden ver los parametros que pueden ser personalizados.
 
-10. `Tools.split_and_convert_data(df, target, test_size=0.2, random_state=np.random.randint(1, 1000), encode_categorical=False)`: Divide los datos en conjuntos de entrenamiento y prueba y, opcionalmente, codifica variables categóricas.
-
-11. `Graphs_ml.plot_cluster(df, random_state=np.random.randint(1, 1000))`: Gráfico de codo y silueta que es escencial para determinar el número de clusters óptimo a utilizar en los métodos de clusters anteriores.
+10. `Graphs_ml.plot_cluster(df, random_state=np.random.randint(1, 1000))`: Gráfico de codo y silueta que es escencial para determinar el número de clusters óptimo a utilizar en los métodos de clusters anteriores.
 
 ## Modulo [ts.py](): Manipulación de Datos temporales
 

@@ -12,7 +12,7 @@ The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Models* are tools for performin
 
 3. `EDA.impute_missing(df, method="median", n_neighbors=None)`: Imputes missing values in a DataFrame using the median method for numerical variables and the mode method for categorical variables. The K-Nearest Neighbors (KNN) method can also be used to impute missing values.
 
-4. `EDA.standardize_variables(df, target, method="zscore")`: Standardizes numerical variables in a DataFrame using the "z-score" method (mean and standard deviation-based standardization). Other standardization methods such as 'minmax' and 'robust' are also available.
+4. `EDA.standardize_variables(df, method="zscore")`: Standardizes numerical variables in a DataFrame using the "z-score" method (mean and standard deviation-based standardization). Other standardization methods such as 'minmax' and 'robust' are also available.
 
 5. `EDA.balance_data(df, target, oversampling=True)`: Performs random sampling of data to balance classes in a binary classification problem. This helps mitigate class imbalance issues in the dataset.
 
@@ -20,7 +20,7 @@ The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Models* are tools for performin
 
 7. `EDA.numeric_statistics(df)`: Generates statistical data for numerical variables in the DataFrame.
 
-8. `EDA.convert_to_numeric(df, target, method="ohe", drop_first=True)`: Performs categorical variable encoding using different methods. In addition to "ohe" (one-hot-encode), "dummy" and "label" (label-encode) methods can be selected.
+8. `EDA.convert_to_numeric(df, method="ohe", drop_first=True)`: Performs categorical variable encoding using different methods. In addition to "ohe" (one-hot-encode), "dummy" and "label" (label-encode) methods can be selected.
 
 9. `EDA.analyze_nulls(df)`: Returns the percentage of null values in the entire dataset for each column.
 
@@ -78,9 +78,7 @@ The classes `ml.ML`, `ml.Graphs_ml`, and `ml.Tools` are a tool for performing mo
 
 9. `Tools.generate_soft_clusters(...)`: Applies Gaussian Mixture Models (GMM) to the DataFrame to generate a table with the probabilities of each observation belonging to a specific cluster. You can find customizable parameters within the docstring.
 
-10. `Tools.split_and_convert_data(df, target, test_size=0.2, random_state=np.random.randint(1, 1000), encode_categorical=False)`: Divides data into training and testing sets and optionally encodes categorical variables.
-
-11. `Graphs_ml.plot_cluster(df, random_state=np.random.randint(1, 1000))`: Elbow and silhouette plot, which is essential for determining the optimal number of clusters to use in the aforementioned clustering methods.
+10. `Graphs_ml.plot_cluster(df, random_state=np.random.randint(1, 1000))`: Elbow and silhouette plot, which is essential for determining the optimal number of clusters to use in the aforementioned clustering methods.
 
 ## Module [ts.py](): Time Series Data Manipulation
 

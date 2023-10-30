@@ -13,9 +13,10 @@ import joblib
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+from sklearn.model_selection import train_test_split
 from kerastuner.tuners import RandomSearch
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import Dense, Dropout, LSTM, GRU
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from .ml import Tools
 
@@ -120,8 +121,13 @@ class DL(Tools):
                 directory='tuner_dir',
                 project_name='my_tuner')
 
+            # Separate the target variable 'y' from the rest of the variables 'X'
+            X = df.drop(columns=[target])
+            y = df[target]
+            # Split the data into training and test sets
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+
             # Train the tuner to find the best hyperparameters
-            X_train, X_test, y_train, y_test = Tools.split_and_convert_data(df, target)
             tuner.search(X_train, y_train, validation_data=(X_test, y_test), 
                          epochs=num_epochs, batch_size=batch_size)
 
@@ -199,8 +205,11 @@ class DL(Tools):
                 Artificial Neural Network (ANN) model.
         """
 
-        # Model training
-        X_train, X_test, y_train, y_test = Tools.split_and_convert_data(df, target)
+        # Separate the target variable 'y' from the rest of the variables 'X'
+        X = df.drop(columns=[target])
+        y = df[target]
+        # Split the data into training and test sets
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
 
         if problem_type == 'classification' and y_train.nunique() > 2:
                 raise NotImplementedError('Sorry, multiclass classification not found!')
@@ -239,6 +248,7 @@ class DL(Tools):
                                  early_stopping=True,
                                  momentum=momentum,
                                  random_state=1)
+            
         elif problem_type == 'classification':
             model = MLPClassifier(**params,
                                  alpha=alpha,
@@ -263,3 +273,119 @@ class DL(Tools):
 
         return model
 
+
+class Beta(Tools):
+
+    @classmethod
+    def model_RNN(cls, 
+                  df, 
+                  target, 
+                  input_shape, 
+                  problem_type, 
+                  num_units=16, 
+                  num_class=1, 
+                  use_gru_model=False, 
+                  num_layers=1, 
+                  dropout_rate=0.2, 
+                  optimizer='adam', 
+                  learning_rate=0.01, 
+                  activation='relu', 
+                  num_epochs=10, 
+                  batch_size=32,
+                  test_size=0.2,
+                  random_state=np.random.randint(1, 1000)):
+        """
+        Create a customizable Recurrent Neural Network (RNN) model. Can be used with LSTM or GRU. Recommended for time series data.
+
+        Args:
+            df (pandas DataFrame): The DataFrame containing the data.
+            target (str): The name of the target column.
+            input_shape (tuple): Input dimensions as a tuple (timesteps, features).
+            problem_type (str): Can be 'classification', 'regression', or 'multiclass'.
+            num_units (int, optional): Number of units in each RNN layer. Default is 16.
+            num_class (int, optional): Number of output classes. Default is 1.
+            use_gru_model (bool, optional): The default model is 'LSTM', set to True to use 'GRU'.
+            num_layers (int, optional): Number of stacked RNN layers. Default is 1.
+            dropout_rate (float, optional): Dropout rate for dropout layers. Default is 0.2.
+            optimizer (str, optional): Optimizer to use: 'adam', 'rmsprop', 'sgd', etc. Default is 'adam'.
+            learning_rate (float, optional): Learning rate for the optimizer. Default is 0.01.
+            activation (str, optional): Activation function 'relu', 'softmax', 'sigmoid', etc. Default 'relu'.
+            num_epochs (int, optional): Number of epochs for model training. Default is 10.
+            batch_size (int, optional): Batch size for training. Default is 32.
+            test_size (float, opt): The sample size for the test set, default is 0.2.
+            random_state (int): Seed to use for data splitting, defaults to a random number.
+
+        Model Loading:
+            # Recreate the exact same model from the file
+            my_model = tf.keras.models.load_model('rnn_model.h5')
+            # Use it for prediction
+            prediction = my_model.predict(input_data)
+
+        Returns:
+            tensorflow.keras.models.Sequential: RNN model (LSTM or GRU).
+        """
+        model = Sequential()
+
+        # RNN Input Layer
+        if use_gru_model:
+            model.add(GRU(num_units, input_shape=input_shape, return_sequences=True))
+        else:
+            model.add(LSTM(num_units, input_shape=input_shape, return_sequences=True))
+        model.add(Dropout(dropout_rate))
+
+        # Additional LSTM Layers (if num_layers > 1)
+        for _ in range(num_layers - 1):
+            if use_gru_model:
+                model.add(GRU(num_units, return_sequences=True))
+            else:
+                model.add(LSTM(num_units, return_sequences=True))
+            model.add(Dropout(dropout_rate))
+            model.add(Dense(num_units, activation=activation))  # Activation function in hidden layers
+
+        # Output Layer
+        if use_gru_model:
+            model.add(GRU(num_units))
+        else:
+            model.add(LSTM(num_units))
+        model.add(Dropout(dropout_rate))
+
+        if problem_type == 'regression':
+            # Regression case (single class)
+            output_activation = 'linear'
+            loss, metric = 'mean_squared_error', 'mean_squared_error'
+        elif problem_type == 'classification':
+            # Binary classification case (two classes)
+            output_activation = 'sigmoid'
+            loss, metric = 'binary_crossentropy', 'accuracy'
+        elif problem_type == 'multiclass':
+            # Multiclass classification case (more than two classes)
+            output_activation = 'softmax'
+            loss, metric = 'categorical_crossentropy', 'accuracy'
+        else:
+            raise ValueError('problem_type options: "regression", "classification", or "multiclass"')
+
+        model.add(Dense(num_class, activation=output_activation))
+
+        optimizer = tf.keras.optimizers.get(optimizer, learning_rate=learning_rate)
+
+        model.compile(loss=loss, optimizer=optimizer, metrics=[metric])
+
+        # Separate the target variable 'y' from the rest of the variables 'X'
+        X = df.drop(columns=[target])
+        y = df[target]
+        # Split the data into training and test sets
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+
+        # Model Training
+        model.fit(X_train, y_train, epochs=num_epochs, batch_size=batch_size)
+
+        # Evaluate Model Effectiveness on Test Data
+        eval_result = model.evaluate(X_test, y_test)
+        print(f"\nModel Effectiveness on Test Data: \nLoss = {eval_result[0]:.3f} \n{metric.capitalize()} = {eval_result[1]:.3f}")
+
+        # Save the Model
+        model.save('rnn_model.h5')
+        print('\nThe model has been saved as "rnn_model.h5"')
+
+        return model
+    

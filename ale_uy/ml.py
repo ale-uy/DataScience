@@ -28,46 +28,42 @@ from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_er
     precision_score, recall_score, f1_score, roc_auc_score, r2_score, mean_squared_log_error, silhouette_score
 from sklearn.cluster import KMeans, DBSCAN
 
-
-
 pd.set_option('display.max_colwidth', None) # Display full cell width in the DataFrame
 warnings.filterwarnings("ignore")
+
 
 
 class Tools:
 
     @classmethod
-    def feature_importance(cls, df: pd.DataFrame, target: str, n_estimators=100, save_model=False, bottom=0,
-                          random_state=np.random.randint(1, 1000), cv=5, model_filename="Random_Forest",
-                          problem_type=None, eliminate=False, threshold=0.0001):
+    def feature_importance(cls, df: pd.DataFrame, target: str, problem_type=None, n_estimators=100, 
+                           save_model=False, bottom=0, random_state=np.random.randint(1, 1000), cv=5,
+                           model_filename="Random_Forest", eliminate=False, threshold=0.005):
         """
         Calculates the importance of variables based on their contribution to prediction using RandomForest.
 
         Parameters:
             df (pandas DataFrame): The DataFrame containing input variables and the target variable.
             target (str): The name of the column containing the target variable.
-            n_estimators (int): Number of trees to be used for classification, 100 by default.
-            random_state (int): Seed to use, by default, it's a random number.
-            cv (int): Number of cross-validation folds, 5 by default.
-            bottom (int): How many variables from the bottom to display (all by default).
-            save_model (bool): True to save the model (False by default).
-            eliminate (bool): Whether to eliminate less important variables. By default, it's False.
             problem_type (str): 'classification' or 'regression' (None by default).
-            threshold (float): Threshold value determining the minimum importance required to keep a variable.
+            n_estimators (int, opt): Number of trees to be used for classification, 100 by default.
+            save_model (bool, opt): True to save the model (False by default).
+            bottom (int, opt): How many variables from the bottom to display (all by default).
+            random_state (int, opt): Seed to use, by default, it's a random number.
+            cv (int, opt): Number of cross-validation folds, 5 by default.
+            model_filename (str, optional): The filename for saving the model.
+            eliminate (bool, opt): Whether to eliminate less important variables. By default, it's False.
+            threshold (float, opt): Threshold value determining the minimum importance required to keep a variable.
                               By default, it's 0.005.
 
         Returns:
             pandas DataFrame: A DataFrame containing the importance ranking of each variable.
             float: Model performance measured by the corresponding metric on the test set.
         """
+
         # Separate the target variable 'y' from the rest of the variables 'X'
         X = df.drop(columns=[target])
         y = df[target]
-        if not np.issubdtype(y.dtype, np.number):
-            # If it's not numeric, convert it using LabelEncoder
-            label_encoder = LabelEncoder()
-            y_encoded = label_encoder.fit_transform(y)
-            y = pd.Series(y_encoded, name=target)
 
         # Create and train a RandomForest model
         rf_model = RandomForestClassifier(n_estimators=n_estimators, random_state=random_state) \
@@ -100,46 +96,6 @@ class Tools:
             print()
             print(f'The least important variables: ')
             print(f'{importance_df[-bottom:]}')
-
-    @classmethod
-    def split_and_convert_data(cls, df: pd.DataFrame, target: str, test_size=0.2,
-                               random_state=np.random.randint(1, 1000),
-                               encode_categorical=False) -> tuple:
-        """
-        Splits the data into training and test sets and optionally encodes categorical variables.
-
-        Parameters:
-            df (pandas DataFrame): The DataFrame containing the data.
-            target (str): The name of the target column.
-            test_size (float): The size of the test set. Default is 0.2.
-            random_state (int): The random seed for data splitting. Default is a random value.
-            encode_categorical (bool): Indicates whether categorical variables should be automatically encoded. Default is False.
-
-        Returns:
-            tuple: A tuple containing the training and test sets in the order:
-            (X_train, X_test, y_train, y_test).
-        """
-        # Separate the target variable 'y' from the rest of the variables 'X'
-        X = df.drop(columns=[target])
-        y = df[target]
-
-        # Automatically encode categorical variables using pd.Categorical
-        if encode_categorical:
-            categorical_columns = X.select_dtypes(include=['object']).columns
-            label_encoder = LabelEncoder()
-            for col in categorical_columns:
-                X[col] = label_encoder.fit_transform(X[col])
-            # Check if the target variable is numeric
-            if not np.issubdtype(y.dtype, np.number):
-                # If it's not numeric, convert it using LabelEncoder
-                label_encoder = LabelEncoder()
-                y_encoded = label_encoder.fit_transform(y)
-                y = pd.Series(y_encoded, name=target)
-
-        # Split the data into training and test sets
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
-
-        return X_train, X_test, y_train, y_test
 
     @classmethod
     def _metrics(cls, y_test, y_pred, metric_type=None):
@@ -544,7 +500,7 @@ class ML(Tools):
     def lightgbm_model(cls, df:pd.DataFrame, target:str, problem_type:str, random_state=np.random.randint(1,1000),
                         num_leaves=20, num_boost_round=100, graph=False, test_size=0.2, cv=5,
                         learning_rate=0.1, max_depth=-1, save_model=False, model_filename='lightgbm', 
-                        encode_categorical=False, grid='', boosting_type='gbdt', n_iter=10):
+                        grid=None, boosting_type='gbdt', n_iter=10):
         """
         Use LightGBM to predict the target variable in a DataFrame.
         
@@ -562,8 +518,7 @@ class ML(Tools):
             learning_rate (float): Model's learning rate, default is 0.1.
             max_depth (int): Maximum tree depth, default is -1 (no limit).
             save_model (bool): If True, the trained model will be saved to disk. Default is False.
-            model_filename (str): The filename for saving the model. Required if save_model is True.
-            encode_categorical (bool, optional):
+            model_filename (str, optional): The filename for saving the model.
             grid (str, optional): Indicates whether to perform hyperparameter tuning using: 
                 'full', 'random' or 'optuna'. Default None.
             boosting_type (str): Type of boosting algorithm to use.
@@ -571,32 +526,33 @@ class ML(Tools):
                 - 'gbdt': Gradient Boosting Decision Tree (default).
                 - 'dart': Dropouts meet Multiple Additive Regression Trees.
                 - 'goss': Gradient-based One-Side Sampling.
-            NOTE: To load a model, do the following:
-                import joblib
-        
-                # Path and filename where the model was saved
-                model_filename = "model_file_name.pkl"
-        
-                # Load the model
-                loaded_model = joblib.load(model_filename)
-        
-                # You can now use the loaded model to make predictions
-                # Suppose you have a dataset 'X_test' for predictions
-                y_pred = loaded_model.predict(X_test)
+
+        To load a model, do the following:
+            import joblib
+    
+            # Path and filename where the model was saved
+            model_filename = "model_file_name.pkl"
+    
+            # Load the model
+            loaded_model = joblib.load(model_filename)
+    
+            # You can now use the loaded model to make predictions
+            # Suppose you have a dataset 'X_test' for predictions
+            y_pred = loaded_model.predict(X_test)
         
         Returns:
             print(pd.DataFrame): A DataFrame containing various metrics and statistics of the model.
             LightGBM Model: The trained model.
         """
 
+        # Separate the target variable 'y' from the rest of the variables 'X'
+        X = df.drop(columns=[target])
+        y = df[target]
         # Split the data into training and test sets
-        X_train, X_test, y_train, y_test = cls.split_and_convert_data(df, target,
-                                                                           test_size=test_size,
-                                                                           random_state=random_state,
-                                                                           encode_categorical=encode_categorical)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
 
         if problem_type == 'classification' and y_train.nunique() > 2:
-                raise NotImplementedError('Sorry, multiclass classification not found!')
+                raise NotImplementedError('Sorry, multiclass classification not implemented!')
 
         if grid in ['full', 'random']:
             # Define the hyperparameter search space
@@ -709,7 +665,7 @@ class ML(Tools):
     def xgboost_model(cls, df:pd.DataFrame, target:str, problem_type:str, test_size=0.2, cv=5,
                 n_estimators=100, save_model=False, model_filename='xgboost',
                 learning_rate=0.1, max_depth=3, random_state=np.random.randint(1, 1000),
-                graph=False, grid='', n_iter=10):
+                graph=False, grid=None, n_iter=10):
         """
         Use XGBoost to predict the target variable in a DataFrame.
 
@@ -718,39 +674,41 @@ class ML(Tools):
             target (str): The name of the column containing the target variable.
             problem_type (str): Type of problem: 'classification' or 'regression'.
             test_size (float): The sample size for the test set, default is 0.2.
+            cv: Number of cross-validation partitions. Default is 5.
             n_estimators (int): The number of algorithm iterations (number of trees), default is 100.
+            save_model (bool): If True, the trained model will be saved to disk. Default is False.
+            model_filename (str, optional): The filename for saving the model.
             learning_rate (float): Model's learning rate, default is 0.1.
             max_depth (int): Maximum tree depth, default is 3.
-            cv: Number of cross-validation partitions. Default is 5.
-            n_iter: Number of hyperparameter combinations to try. Default is 10.
             random_state (int): Seed to use for data splitting, defaults to a random number.
             graph (bool): If True, generate corresponding graphs based on the problem type.
             grid (str, optional): Indicates whether to perform hyperparameter tuning using: 
                 'full', 'random' or 'optuna'. Default None.
-            NOTE: To load a model, do the following:
-                import joblib
+            n_iter: Number of hyperparameter combinations to try. Default is 10.
 
-                # Path and filename where the model was saved
-                model_filename = "model_file_name.pkl"
+        To load a model, do the following:
+            import joblib
 
-                # Load the model
-                loaded_model = joblib.load(model_filename)
+            # Path and filename where the model was saved
+            model_filename = "model_file_name.pkl"
 
-                # You can now use the loaded model to make predictions
-                # Suppose you have a dataset 'X_test' for predictions
-                y_pred = loaded_model.predict(X_test)
+            # Load the model
+            loaded_model = joblib.load(model_filename)
+
+            # You can now use the loaded model to make predictions
+            # Suppose you have a dataset 'X_test' for predictions
+            y_pred = loaded_model.predict(X_test)
 
         Returns:
             print(pd.DataFrame): A DataFrame containing various metrics and statistics of the model.
             XGBoost Model: The trained model.
         """
 
-
+        # Separate the target variable 'y' from the rest of the variables 'X'
+        X = df.drop(columns=[target])
+        y = df[target]
         # Split the data into training and test sets
-        X_train, X_test, y_train, y_test = cls.split_and_convert_data(df,
-                                                                      target,
-                                                                      test_size=test_size,
-                                                                      random_state=random_state)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
 
         if grid in ['full', 'random']:
             # XGBoost model parameters
@@ -871,45 +829,45 @@ class ML(Tools):
             df (pandas DataFrame): The DataFrame containing the input variables and the target variable.
             target (str): The name of the column containing the target variable.
             problem_type (str): Type of problem: 'classification' or 'regression'.
-            test_size (float): The sample size for the test set, default is 0.2.
-            num_boost_round (int): The number of algorithm iterations (number of trees), default is 100.
-            learning_rate (float): Model's learning rate, default is 0.1.
-            max_depth (int): Maximum tree depth, default is 3.
-            cv: Number of cross-validation partitions. Default is 5.
-            n_iter: Number of hyperparameter combinations to try. Default is 10.
+            test_size (float, opt): The sample size for the test set, default is 0.2.
+            n_iter (int, opt): Number of hyperparameter combinations to try. Default is 10.
+            num_boost_round (int, opt): The number of algorithm iterations (number of trees), default is 100.
+            learning_rate (float, opt): Model's learning rate, default is 0.1.
+            max_depth (int, opt): Maximum tree depth, default is 3.
+            cv (int, opt): Number of cross-validation partitions. Default is 5.
             random_state (int): Seed to use for data splitting, defaults to a random number.
             graph (bool): If True, generate corresponding graphs based on the problem type.
             save_model (bool): If True, the trained model will be saved to disk. Default is False.
             model_filename (str): The filename for saving the model if save_model is True.
             grid (str, optional): Indicates whether to perform hyperparameter tuning using: 
                 'full', 'random' or 'optuna'. Default None.
-            NOTE: To load a model, do the following:
-                import joblib
 
-                # Path and filename where the model was saved
-                model_filename = "model_file_name.pkl"
+        To load a model, do the following:
+            import joblib
 
-                # Load the model
-                loaded_model = joblib.load(model_filename)
+            # Path and filename where the model was saved
+            model_filename = "model_file_name.pkl"
 
-                # You can now use the loaded model to make predictions
-                # Suppose you have a dataset 'X_test' for predictions
-                y_pred = loaded_model.predict(X_test)
+            # Load the model
+            loaded_model = joblib.load(model_filename)
+
+            # You can now use the loaded model to make predictions
+            # Suppose you have a dataset 'X_test' for predictions
+            y_pred = loaded_model.predict(X_test)
 
         Returns:
             print(pd.DataFrame): A DataFrame containing various metrics and statistics of the model.
             CatBoost Model: The trained model.
         """
 
-
+        # Separate the target variable 'y' from the rest of the variables 'X'
+        X = df.drop(columns=[target])
+        y = df[target]
         # Split the data into training and test sets
-        X_train, X_test, y_train, y_test = cls.split_and_convert_data(df,
-                                                                      target,
-                                                                      test_size=test_size,
-                                                                      random_state=random_state)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
         
         if problem_type == 'classification' and y_train.nunique() > 2:
-                raise NotImplementedError('Sorry, multiclass classification not found!')
+                raise NotImplementedError('Sorry, multiclass classification not Implemented!')
 
         if grid in ['full', 'random']:
             params = {
