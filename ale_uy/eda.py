@@ -532,17 +532,18 @@ class Graphs_eda:
             return cluster_series
 
     @classmethod
-    def correlation_heatmap_plot(cls, df: pd.DataFrame) -> None:
+    def correlation_heatmap_plot(cls, df: pd.DataFrame, method='spearman') -> None:
         """
         Generates a correlation heatmap for the given DataFrame.
 
         Args:
-            df: A DataFrame with the data.
+            df (pandas DataFrame): A DataFrame with the data.
+            method (str, optional): 'pearson', 'kendall' or 'spearman' (default)
 
         Returns:
             None.
         """
-        corr = df.corr()
+        corr = df.corr(method=method)
         plt.figure(figsize=(12, 10))
         sns.heatmap(corr, linewidth=0.5, annot=True, cmap="RdBu", vmin=-1, vmax=1)
 
@@ -591,7 +592,7 @@ class Models:
         Parameters:
         df (pandas.DataFrame): The DataFrame containing the data.
         target (str): The name of the dependent variable column.
-        type_model (str): The type of regression model to perform ('linear' (default), 'logit', 'poisson', 'robust').
+        type_model (str): The type of regression model to perform, 'linear' (default), 'logit', 'probit', 'robust'.
 
         Returns:
         results (statsmodels.regression.linear_model.RegressionResultsWrapper): The results of the regression.
@@ -616,14 +617,14 @@ class Models:
         elif type_model.lower() == 'logit':
             # Create a logistic regression model
             model = sm.Logit(y, X)
-        elif type_model.lower() == 'poisson':
-            # Create a Poisson regression model
-            model = sm.GLM(y, sm.add_constant(X), family=sm.families.Poisson())
+        elif type_model.lower() == 'probit':
+            # Create a probit regression model
+            model = sm.Probit(y, X)
         elif type_model.lower() == 'robust':
             # Create a robust linear regression model
             model = sm.RLM(y, sm.add_constant(X), M=sm.robust.norms.HuberT())
         else:
-            raise ValueError("Valid type_model values: 'linear' (default), 'logit', 'poisson', 'robust'")
+            raise ValueError("Valid type_model values: 'linear' (default), 'logit', 'probit', 'robust'")
 
         # Fit the model to the data
         results = model.fit()
