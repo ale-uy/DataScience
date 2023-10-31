@@ -50,7 +50,7 @@ Las clases `eda.EDA`, `eda.Graphs_eda` y `eda.Multivariate` son una herramienta 
 
 #### Modelos de Regresion y Clasificacion (Models)
 
-1. `Models.perform_model(df, target, type_model='linear')`: Este método ajusta un tipo especificado de modelo de regresión a los datos proporcionados. Admite modelos de regresión lineal, logística, de Poisson y de regresión lineal robusta. Los resultados de la regresión se imprimen, y se devuelve el modelo. *type_model* = 'linear' (por defecto), 'logit', 'poisson', 'robust'.
+1. `Models.perform_model(df, target, type_model='linear')`: Este método ajusta un tipo especificado de modelo de regresión a los datos proporcionados. Admite modelos de regresión lineal, logística, de Poisson y de regresión lineal robusta. Los resultados de la regresión se imprimen, y se devuelve el modelo. *type_model* = 'linear' (por defecto), 'logit', 'robust'.
 
 ## Modulo [ml.py](): Modelado de Datos
 

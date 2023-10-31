@@ -50,7 +50,7 @@ The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Models* are tools for performin
 
 #### Perform Models Regression and Classification (Models)
 
-1. `Models.perform_model(df, target, type_model='linear')`: This method fits a specified type of regression model to the provided data. It supports linear, logistic, Poisson, and robust linear regression models. The results of the regression are printed, and the model is returned. *type_model* = 'linear' (default), 'logit', 'poisson', 'robust'.
+1. `Models.perform_model(df, target, type_model='linear')`: This method fits a specified type of regression model to the provided data. It supports linear, logistic, Poisson, and robust linear regression models. The results of the regression are printed, and the model is returned. *type_model* = 'linear' (default), 'logit', 'robust'.
 
 ## Module [ml.py](): Data Modeling
 
