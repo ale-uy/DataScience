@@ -38,7 +38,10 @@ class DL(Tools):
                    num_epochs=10,
                    grid=False,
                    batch_size=32,
-                   max_trials=10):
+                   max_trials=10,
+                   test_size=0.2,
+                   random_state=1):
+        
         """
         Creates a customizable Feedforward Neural Network (FNN) model.
         Recommended for regression or classification problems.
@@ -58,6 +61,8 @@ class DL(Tools):
             grid (bool, optional): Search for hyperparameters. Default is False.
             batch_size (int, optional): Batch size for training. Default is 32.
             max_trials (int, optional): If grid=True, use to search best params this number time. Default 10.
+            test_size (float, opt): The sample size for the test set, default is 0.2.
+            random_state (int): Seed to use for data splitting, defaults to a random number.
 
         Load Model:
             # Recreate the exact same model from the file
@@ -179,7 +184,9 @@ class DL(Tools):
                    grid=False,
                    cv=5,
                    n_iter=10,
-                   batch_size='auto'):
+                   batch_size='auto',
+                   test_size=0.2,
+                   random_state=1):
         """
         Create a customizable Artificial Neural Network (ANN) model using scikit-learn.
 
@@ -199,6 +206,8 @@ class DL(Tools):
             cv (int, optional): Number of cross-validation partitions. Default is 5 if grid=True.
             n_iter (int, optional): Number of hyperparameter combinations to try. Default is 10 if grid=True.
             batch_size (int, optional): Batch size for training. Default is 'auto'.
+            test_size (float, opt): The sample size for the test set, default is 0.2.
+            random_state (int): Seed to use for data splitting, defaults to a random number.
 
         Returns:
             sklearn.neural_network.MLPClassifier or sklearn.neural_network.MLPRegressor: 
