@@ -2,3 +2,4 @@ CheatSheet
 __pycache__
 .vscode
 ale_uy/dl_alpha.py
+ale_uy/tests

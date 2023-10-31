@@ -18,7 +18,7 @@ from kerastuner.tuners import RandomSearch
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM, GRU
 from sklearn.neural_network import MLPClassifier, MLPRegressor
-from .ml import Tools
+from ml import Tools
 
 
 class DL(Tools):
@@ -302,7 +302,7 @@ class Beta(Tools):
                   num_epochs=10, 
                   batch_size=32,
                   test_size=0.2,
-                  random_state=np.random.randint(1, 1000)):
+                  random_state=1):
         """
         Create a customizable Recurrent Neural Network (RNN) model. Can be used with LSTM or GRU. Recommended for time series data.
 
