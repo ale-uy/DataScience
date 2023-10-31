@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import seaborn as sns
 import statsmodels.api as sm
-import statsmodels.formula.api as smf
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.impute import KNNImputer
