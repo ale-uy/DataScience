@@ -2,7 +2,7 @@
 """
 Author: ale-uy
 Date: 08/2023
-Updated: 09/2023
+Updated: 11/2023
 Version: v1
 File: ts.py
 Description: Methods for applying time series algorithms in a straightforward manner.
@@ -230,8 +230,9 @@ class TS:
             p, d, q, P, D, Q, s = 2, 0, 2, 0, 0, 0, 0
             result = TS.sarima_model(df, "target", p, d, q, P, D, Q, s)
         """
-        series = df[target]
-        model = SARIMAX(series, order=(p, d, q), seasonal_order=(P, D, Q, s))
+        X = df.drop(target, axis=1)
+        y = df[target]
+        model = SARIMAX(endog=y, exog=X, order=(p, d, q), seasonal_order=(P, D, Q, s))
         result = model.fit()
         return result
 
