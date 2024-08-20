@@ -3,3 +3,5 @@ __pycache__
 .vscode
 ale_uy/dl_alpha.py
 ale_uy/tests
+ale_uy/__init__.py
+ale_uy/*.csv

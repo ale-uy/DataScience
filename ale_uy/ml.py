@@ -11,7 +11,7 @@ License: Apache License Version 2.0
 
 import joblib
 import warnings
-import optuna
+import optuna; optuna.logging.set_verbosity(optuna.logging.ERROR)
 import xgboost as xgb
 import catboost as cb
 import numpy as np
@@ -205,52 +205,43 @@ class Tools:
             cv: Number of cross-validation partitions. Default is 5.
 
         Returns:
-            dict: A dictionary containing the best-found hyperparameters and the best score.
+            optuna.study.Study: The Optuna study object.
         """
 
         def objective(trial):
             # Define hyperparameters to be optimized
             params = {}
             for param_name, param_range in param_space.items():
-                if isinstance(param_range, tuple) and len(param_range) == 2:
+                if isinstance(param_range, list):
+                    # If they are categorical values, use suggest_categorical
+                    params[param_name] = trial.suggest_categorical(param_name, param_range)
+                elif isinstance(param_range, tuple) and len(param_range) == 2:
                     lower, upper = param_range
                     if isinstance(lower, int) and isinstance(upper, int):
                         # If it is a range of integers, use suggest_int
                         params[param_name] = trial.suggest_int(param_name, lower, upper)
                     elif isinstance(lower, float) and isinstance(upper, float):
                         # If it is a range of floats, use suggest_uniform
-                        params[param_name] = trial.suggest_uniform(param_name, lower, upper)
-                    elif all(isinstance(val, str) for val in param_range):
-                        # If they are categorical values, use suggest_categorical
-                        params[param_name] = trial.suggest_categorical(param_name, param_range)
+                        params[param_name] = trial.suggest_discrete_uniform(param_name, lower, upper, 0.02)
                     else:
                         raise ValueError(f"Unsupported range type for hyperparameter {param_name}")
                 else:
                     raise ValueError(f"Invalid range for hyperparameter {param_name}")
 
-            # Set the hyperparameters in the model
-            model.set_params(**params)
+                # Set the hyperparameters in the model
+                model.set_params(**params)
 
-            # Perform cross-validation
-            scores = cross_val_score(model, X_train, y_train, cv=cv, scoring=scoring)
-            score = scores.mean()
+                # Perform cross-validation
+                scores = cross_val_score(model, X_train, y_train, cv=cv, scoring=scoring)
+                score = scores.mean()
 
-            return score
+                return score
 
-        # Create an Optuna study and optimize hyperparameters
-        study = optuna.create_study(direction='maximize')  # Or 'minimize' if it is a minimization problem
-        study.optimize(objective, n_trials=n_iter)  # Number of test iterations
+        study = optuna.create_study(sampler=optuna.samplers.TPESampler(multivariate=True))
+        study.optimize(objective, n_trials=n_iter)
 
-        # Gets the best combination of hyperparameters found
-        best_params = study.best_params
-        best_score = study.best_value
-
-        result = {
-            'best_params': best_params,
-            'best_score': best_score
-        }
-
-        return result
+        # Retrieve the best parameters
+        return study.best_params 
 
     @classmethod
     def _random_search(cls, model, param_dist, X_train, y_train, scoring='accuracy', cv=5, n_iter=10):

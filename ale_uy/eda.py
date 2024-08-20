@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 """
 Author: ale-uy
 Date: 05/2023
-Updated: 10/2023
-Version: v2
+Updated: 08/2024
+Version: v2.1
 File: eda.py
 Description: Automate data analysis and cleaning processes
 License: Apache License Version 2.0
@@ -21,6 +20,7 @@ from sklearn.impute import KNNImputer
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, RobustScaler, StandardScaler
 from imblearn.over_sampling import SMOTENC
+from typing import Literal, Optional, Union
 
 
 
@@ -47,76 +47,44 @@ class EDA:
         print(df.select_dtypes('number').describe().T)
 
     @classmethod
-    def convert_to_numeric(cls, df: pd.DataFrame, method="ohe", drop_first=True):
+    def convert_to_numeric(cls, df: pd.DataFrame, 
+                           method: Literal["dummy", "ohe", "label"] = "ohe", 
+                           drop_first: bool = True) -> pd.DataFrame:
         """
         Performs the encoding of categorical variables using different methods.
+        
         Parameters:
-            df (pandas DataFrame): The DataFrame containing the variables to be encoded.
-            method (str): The encoding method to use. Valid options:
-                - "dummy": Dummy encoding.
-                - "ohe": One-Hot Encoding.
-                - "label": LabelEncoder.
-            drop_first (bool): Drops the first dummy when using "dummy" encoding. Default is True.
+            df (pd.DataFrame): The DataFrame containing the variables to be encoded.
+            method (Literal["dummy", "ohe", "label"]): The encoding method to use. Default is "ohe".
+            drop_first (bool): Drops the first dummy when using "dummy" or "ohe" encoding. Default is True.
+        
         Returns:
-            pandas DataFrame: The original DataFrame with the categorical columns encoded, excluding the target column.
+            pd.DataFrame: The original DataFrame with the categorical columns encoded, excluding the target column.
+        
+        Raises:
+            ValueError: If an invalid method is provided.
         """
-
-        # Use the specified encoding method
+        
+        encoded_df = df.copy()
+        
+        object_columns = encoded_df.select_dtypes(include=['object']).columns
+        
         if method == "dummy":
-            """
-            Performs dummy encoding on categorical variables in the DataFrame.
-            Parameters:
-                df (pandas DataFrame): The DataFrame containing the categorical variables.
-                drop_first (bool): Drops the first dummy. Default is True.
-            Returns:
-                pandas DataFrame: The original DataFrame with the categorical columns encoded using
-                the dummy method, excluding the target column.
-            """
-            # Convert to dummy
-            encoded_df = pd.get_dummies(df, drop_first=drop_first)
-
+            encoded_df = pd.get_dummies(encoded_df, columns=object_columns, drop_first=drop_first)
+        
         elif method == "ohe":
-            """
-            This method performs One-Hot Encoding for all categorical columns in the DataFrame, 
-            except for the column specified as 'target', which is considered the target
-            variable and will not be encoded. Categorical columns are automatically identified based on their 'object' data type.
-            Returns:
-                pandas DataFrame: The original DataFrame with the categorical columns encoded using
-                One-Hot Encoding, excluding the target column.
-            """
-            # Create the OneHotEncoder with 'drop' option set to 'first' to avoid the dummy variable trap (collinearity).
-            encoder = OneHotEncoder(sparse_output=False, drop='first')
-            # Get automatically identified categorical columns based on their 'object' data type
-            object_columns = df.select_dtypes(include=['object']).columns
-            # Apply One-Hot Encoding to the selected categorical columns and generate a new DataFrame
-            encoded_df = pd.DataFrame(encoder.fit_transform(df[object_columns]))
-            # Assign column names to the new DataFrame based on the original feature names
-            encoded_df.columns = encoder.get_feature_names_out(object_columns)
-            # Drop the original categorical columns from DataFrame 'X'
-            X = df.drop(object_columns, axis=1).reset_index(drop=True)
-            # Concatenate the imputed DataFrame with the encoded categorical columns
-            encoded_df = pd.concat([X, encoded_df], axis=1)
-
+            encoder = OneHotEncoder(sparse_output=False, drop='first' if drop_first else None)
+            encoded_cats = encoder.fit_transform(encoded_df[object_columns])
+            encoded_cats_df = pd.DataFrame(encoded_cats, columns=encoder.get_feature_names_out(object_columns))
+            encoded_df = pd.concat([encoded_df.drop(columns=object_columns), encoded_cats_df], axis=1)
+        
         elif method == "label":
-            """
-            Performs the encoding of categorical variables using LabelEncoder.
-            Returns:
-                pandas DataFrame: The original DataFrame with the categorical columns encoded
-                using LabelEncoder.
-            """
-            # Create a copy of the DataFrame 'df' for encoding
-            encoded_df = df.copy(deep=True)
-            # Get automatically identified categorical columns based on their 'object' data type
-            object_columns = encoded_df.select_dtypes(include=['object']).columns
-            # Create a LabelEncoder object for each categorical column and transform the data
-            label_encoders = {col: LabelEncoder() for col in object_columns}
             for col in object_columns:
-                encoded_df[col] = label_encoders[col].fit_transform(encoded_df[col])
-                
+                encoded_df[col] = LabelEncoder().fit_transform(encoded_df[col])
+        
         else:
             raise ValueError("The 'method' parameter must be one of: 'dummy', 'ohe', 'label'.")
         
-        # Return the complete 'encoded_df' DataFrame with the encoded categorical columns
         return encoded_df
 
     @classmethod
@@ -134,60 +102,63 @@ class EDA:
         return aux
 
     @classmethod
-    def impute_missing(cls, df:pd.DataFrame, method='mm', n_neighbors=None):
+    def impute_missing(cls, df: pd.DataFrame, 
+                       method: Literal['mm', 'knn'] = 'mm', 
+                       num_strategy: Literal['mean', 'median'] = 'median',
+                       n_neighbors: Optional[int] = None) -> pd.DataFrame:
         """
         Imputes missing values in a DataFrame using different methods.
+
         Parameters:
-            df (pandas DataFrame): The DataFrame containing missing values.
-            method (str, optional): The imputation method to use: Default method 'mm'.
-                Default method is "mm" (Median/Mode):
-                    - Imputes the median value for missing values in numeric variables.
-                    - Imputes the mode for categorical variables.
-                Method "knn" (K-Nearest Neighbors):
-                    - Imputes missing values using KNNImputer, a nearest neighbors-based method.
-            n_neighbors (int, optional): The number of nearest neighbors to use in the KNNImputer method.
-                                         Only applicable if the method is "knn".
+            df (pd.DataFrame): The DataFrame containing missing values.
+            method (Literal['mm', 'knn']): The imputation method to use. Default is 'mm'.
+                'mm' (Median/Mode): Imputes median for numeric and mode for categorical variables.
+                'knn' (K-Nearest Neighbors): Imputes missing values using KNNImputer.
+                'interpolate': Imputes missing values using interpolation.
+            num_strategy (Literal['mean', 'median']): The strategy to use for imputing numeric columns when method='mm'.
+                                                      Default is 'median'.
+            n_neighbors (Optional[int]): The number of nearest neighbors to use in the KNNImputer method.
+                                         Only applicable if the method is 'knn'. If None, performs a search.
+
         Returns:
-            pandas DataFrame: The original DataFrame with missing values imputed.
-            
+            pd.DataFrame: The original DataFrame with missing values imputed.
+
+        Raises:
+            ValueError: If an invalid method is provided.
+
         Usage Example:
-            imputed_df = Eda.impute_missing(df, method="knn", n_neighbors=5)
+            imputed_df = EDA.impute_missing(df, method="knn", n_neighbors=5)
         """
+        df_imputed = df.copy()
+
         if method == 'knn':
             if n_neighbors is None:
-                # Perform cross-validation search to find the best value of n_neighbors
-                param_grid = {'n_neighbors': [i for i in range(3, 16)]}  # Values of n_neighbors to try
+                param_grid = {'n_neighbors': list(range(3, 16))}
                 knn_imputer = KNNImputer()
-                grid_search = RandomizedSearchCV(knn_imputer, param_grid, cv=3, n_iter=6)
-                grid_search.fit(df)
-                n_neighbors_best = grid_search.best_params_['n_neighbors']
-                print(f"Best value of n_neighbors found: {n_neighbors_best}")
-            else:
-                n_neighbors_best = n_neighbors
+                grid_search = RandomizedSearchCV(knn_imputer, param_grid, cv=3, n_iter=6, n_jobs=-1)
+                grid_search.fit(df_imputed)
+                n_neighbors = grid_search.best_params_['n_neighbors']
+                print(f"Best value of n_neighbors found: {n_neighbors}")
 
-            # Impute missing values using KNNImputer with the best n_neighbors value
-            knn_imputer = KNNImputer(n_neighbors=n_neighbors_best)
-            df_imputed = knn_imputer.fit_transform(df)
-            df_imputed = pd.DataFrame(df_imputed, columns=df.columns)
+            knn_imputer = KNNImputer(n_neighbors=n_neighbors)
+            imputed_values = knn_imputer.fit_transform(df_imputed)
+            df_imputed = pd.DataFrame(imputed_values, columns=df.columns, index=df.index)
 
         elif method == 'mm':
-            """
-            Impute the median value for missing values in numeric variables
-            and the mode for categorical variables.
-            """
-            df_imputed = df.copy(deep=True)
             for col in df_imputed.columns:
-                if df_imputed[col].dtype == 'object':
-                    # Impute mode for missing values in a categorical column.
-                    mode = df_imputed[col].mode()[0]
-                    df_imputed[col].fillna(mode, inplace=True)
+                if num_strategy == 'median':
+                        df_imputed[col].fillna(df_imputed[col].median(), inplace=True)
+                elif num_strategy == 'mean':
+                    df_imputed[col].fillna(df_imputed[col].mean(), inplace=True)
                 else:
-                    # Impute median for missing values in a numeric column.
-                    median = df_imputed[col].median()
-                    df_imputed[col].fillna(median, inplace=True)
+                    df_imputed[col].fillna(df_imputed[col].mode().iloc[0], inplace=True)
+
+        elif method == 'interpolate':
+            df_imputed.interpolate(method='linear', inplace=True)
+
         else:
-            raise ValueError('methods options: "mm" and "knn"')
-        
+            raise ValueError("The 'method' parameter must be one of: 'mm', 'knn' or 'interpolate'.")
+
         return df_imputed
         
     @classmethod
@@ -212,32 +183,42 @@ class EDA:
         return shuffled_df
     
     @classmethod
-    def standardize_variables(cls, df: pd.DataFrame, method="zscore"):
+    def standardize_variables(cls, df: pd.DataFrame, method: Literal["zscore", "minmax", "robust"] = "zscore") -> pd.DataFrame:
         """
         Standardizes numeric variables in a DataFrame using the specified method.
+
         Parameters:
-            df (pandas DataFrame): The DataFrame containing the variables to standardize.
-            method (str): The standardization method to use. Valid options:
+            df (pd.DataFrame): The DataFrame containing the variables to standardize.
+            method (Literal["zscore", "minmax", "robust"]): The standardization method to use.
                 - 'zscore': Standardization using Z-Score (mean 0, standard deviation 1).
                 - 'minmax': Standardization using Min-Max (range 0 to 1).
                 - 'robust': Robust standardization using medians and quartiles.
-                Default = zscore
-        Returns:
-            pandas DataFrame: The original DataFrame with standardized numeric variables.
-        """
+                Default is "zscore".
 
-        aux = df.copy(deep=True)
-        if method == 'zscore':
-            scaler = StandardScaler()
-        elif method == 'minmax':
-            scaler = MinMaxScaler()
-        elif method == 'robust':
-            scaler = RobustScaler()
-        else:
+        Returns:
+            pd.DataFrame: A new DataFrame with standardized numeric variables.
+
+        Raises:
+            ValueError: If an invalid method is provided or if there are no numeric columns.
+        """
+        numeric_columns = df.select_dtypes(include='number').columns
+
+        if numeric_columns.empty:
+            raise ValueError("No numeric columns found in the DataFrame.")
+
+        scaler = {
+            'zscore': StandardScaler(),
+            'minmax': MinMaxScaler(),
+            'robust': RobustScaler()
+        }.get(method)
+
+        if scaler is None:
             raise ValueError("The 'method' parameter must be one of: 'zscore', 'minmax', 'robust'.")
-        
-        aux[aux.select_dtypes(include='number').columns] = scaler.fit_transform(aux.select_dtypes(include='number'))
-        return aux
+
+        result_df = df.copy()
+        result_df[numeric_columns] = scaler.fit_transform(df[numeric_columns])
+
+        return result_df
     
     @classmethod
     def apply_log1p_transformation(cls, df: pd.DataFrame):
@@ -265,47 +246,61 @@ class EDA:
         return df_transformed
 
     @classmethod
-    def balance_data(cls, df: pd.DataFrame, target: str, oversampling=True):
+    def balance_data(cls, df: pd.DataFrame, target: str, method: str = "oversampling", random_state: Union[int, None] = None) -> pd.DataFrame:
         """
-        Balances an imbalanced dataset in a classification task using the oversampling method.
+        Balances an imbalanced dataset in a binary classification task using oversampling or undersampling.
+
         Parameters:
-            df (pandas DataFrame): The DataFrame containing input variables and the target variable.
+            df (pd.DataFrame): The DataFrame containing input variables and the target variable.
             target (str): The name of the column containing the target variable.
-            oversampling (bool, optional): Uses the "SMOTENC" algorithm for oversampling if True (default), 
-                if False, uses undersampling.
+            method (str): The balancing method to use. Options:
+                - "oversampling": Uses the SMOTENC algorithm for oversampling (default).
+                - "undersampling": Uses random undersampling of the majority class.
+            random_state (int or None): Seed for random number generation. Default is None.
+
         Returns:
-            pandas DataFrame
+            pd.DataFrame: A new DataFrame with balanced classes.
+
+        Raises:
+            ValueError: If an invalid method is provided or if the target is not binary.
+
         Example:
-            # Suppose we have a DataFrame df with imbalanced classes
-            # and we want to balance the classes using the oversampling method:
-            df_balanced = Eda.balance_data(df, 'target_variable')
+            # Balance classes using oversampling
+            df_balanced = EDA.balance_data(df, 'target_variable', method='oversampling')
         """
-        if oversampling:
-            # Separate features and target column
-            X = df.drop(columns=[target])
-            y = df[target]
+        if method not in ["oversampling", "undersampling"]:
+            raise ValueError("The 'method' parameter must be either 'oversampling' or 'undersampling'.")
 
-            # Find numerical and categorical columns
+        # Ensure target is binary
+        if df[target].nunique() != 2:
+            raise ValueError("The target variable must be binary for this balancing method.")
+
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        if method == "oversampling":
             categorical_cols = X.select_dtypes(exclude=['number']).columns
+            categorical_features = [X.columns.get_loc(col) for col in categorical_cols]
 
-            # Create an instance of SMOTE-NC
-            smote_nc = SMOTENC(categorical_features=[X.columns.get_loc(col) for col in categorical_cols])
-
-            # Apply SMOTE-NC to generate synthetic samples
+            smote_nc = SMOTENC(categorical_features=categorical_features, random_state=random_state)
             X_resampled, y_resampled = smote_nc.fit_resample(X, y)
 
-            # Create a new DataFrame with synthetic samples
-            df_balanced = pd.concat([pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=target)], axis=1)
+            df_balanced = pd.concat([pd.DataFrame(X_resampled, columns=X.columns), 
+                                     pd.Series(y_resampled, name=target)], axis=1)
 
-        else:
+        else:  # undersampling
             label_encoder = LabelEncoder()
-            aux = df.copy()
-            aux[target] = label_encoder.fit_transform(aux[target])
-            df_no = aux[aux[target] == 0]
-            df_yes = aux[aux[target] == 1]
-            df_no_reduced = df_no.sample(df_yes.shape[0], random_state=1)
-            df_balanced = pd.concat([df_no_reduced, df_yes], axis=0)
-            df_balanced = df_balanced.sample(frac=1, random_state=1)
+            y_encoded = label_encoder.fit_transform(y)
+            
+            minority_class = y_encoded.min()
+            majority_class = y_encoded.max()
+            
+            df_minority = df[y_encoded == minority_class]
+            df_majority = df[y_encoded == majority_class]
+            
+            df_majority_reduced = df_majority.sample(df_minority.shape[0], random_state=random_state)
+            df_balanced = pd.concat([df_minority, df_majority_reduced], axis=0)
+            df_balanced = df_balanced.sample(frac=1, random_state=random_state)
 
         return df_balanced
         
@@ -355,7 +350,7 @@ class EDA:
         return cleaned_df
 
     @classmethod
-    def perform_pca(df, n_components='mle'):
+    def perform_pca(cls, df, n_components='mle'):
         """
         Perform Principal Component Analysis (PCA).
 
@@ -454,46 +449,45 @@ class Graphs_eda:
         fig.show()
 
     @classmethod
-    def box_plot(cls, df: pd.Series or pd.DataFrame) -> None:
+    def box_plot(cls, df: Union[pd.Series, pd.DataFrame]) -> None:
         """
-        Generates a combined box plot for numerical variables in a DataFrame or a single Series.
-
-        Parameters:
-        - data (pd.Series or pd.DataFrame): The pandas DataFrame or Series containing the data.
-        This method can accept either a DataFrame with numerical variables or a single Series and generate
-        a combined box plot that displays the distribution of these variables in a single chart.
+        Generates a combined boxplot for numeric variables in a DataFrame or a single Series.
 
         Args:
-        - data (pd.Series or pd.DataFrame): The pandas DataFrame or Series containing numerical variables.
+        df (Union[pd.Series, pd.DataFrame]): The pandas DataFrame or Series containing the data.
+
+        Raises:
+        ValueError: If the input is not a pandas DataFrame or Series, or if it does not contain numeric variables.
 
         Returns:
         None
         """
         if isinstance(df, pd.Series):
-            # If input is a Series, create a DataFrame with a single column
             data = pd.DataFrame(df)
         elif isinstance(df, pd.DataFrame):
             data = df.copy()
         else:
-            raise ValueError("Input must be a pandas DataFrame or Series containing numerical variables.")
-        # Melt the DataFrame to have all numerical variables in a single column
-        df_melted = pd.melt(data.select_dtypes(include=['float', 'int']))
-        # Define a custom color palette
-        custom_colors = px.colors.qualitative.Plotly  # You can change this to any other palette
-        # Generate a combined box plot with the custom color palette
-        fig = px.box(df_melted, x='variable', y='value', color='variable', color_discrete_sequence=custom_colors)
-        fig.update_layout(title='Box Plot')
-        fig.show()
+            raise ValueError("The input must be a pandas DataFrame or Series.")
 
-    @classmethod
-    def scatter_plot(cls, df: pd.DataFrame, column_x: str, column_y: str) -> None:
-        """
-        Generates an interactive scatter plot for two variables x and y.
-        Parameters:
-            column_x (str): Name of variable x in the scatter plot.
-            column_y (str): Name of variable y in the scatter plot.
-        """
-        fig = px.scatter(df, x=column_x, y=column_y)
+        numeric_data = data.select_dtypes(include=['float', 'int'])
+        
+        if numeric_data.empty:
+            raise ValueError("The DataFrame or Series does not contain numeric variables.")
+
+        df_melted = pd.melt(numeric_data)
+        
+        custom_colors = px.colors.qualitative.Plotly
+
+        fig = px.box(df_melted, x='variable', y='value', color='variable', 
+                    color_discrete_sequence=custom_colors, 
+                    title='Box Plot')
+        
+        fig.update_layout(
+            xaxis_title="Variables",
+            yaxis_title="Values",
+            showlegend=False
+        )
+        
         fig.show()
 
     @classmethod

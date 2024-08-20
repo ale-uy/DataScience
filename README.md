@@ -10,11 +10,11 @@ The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Models* are tools for performin
 
 2. `EDA.remove_missing_if(df, p=0.5)`: Removes columns with a percentage of missing values greater than or equal to `p` in a DataFrame.
 
-3. `EDA.impute_missing(df, method="median", n_neighbors=None)`: Imputes missing values in a DataFrame using the median method for numerical variables and the mode method for categorical variables. The K-Nearest Neighbors (KNN) method can also be used to impute missing values.
+3. `EDA.impute_missing(df, method="mm", num_strategy="median", n_neighbors=None)`: Imputes missing values in a DataFrame using various strategies. The 'method' parameter allows you to choose from several imputation techniques ('mm', 'knn' or 'interpolate'). The 'num_strategy' parameter can be set to "median" or "mean" when using the "mm" method to determine the strategy for imputing numerical variables. 'n_neighbors' parameter specify the number of neighbors in knn (optional).
 
 4. `EDA.standardize_variables(df, method="zscore")`: Standardizes numerical variables in a DataFrame using the "z-score" method (mean and standard deviation-based standardization). Other standardization methods such as 'minmax' and 'robust' are also available.
 
-5. `EDA.balance_data(df, target, oversampling=True)`: Performs random sampling of data to balance classes in a binary classification problem. This helps mitigate class imbalance issues in the dataset.
+5. `EDA.balance_data(df, target, method="oversampling", random_state=None)`: Balances an imbalanced dataset in a binary classification task using 'oversampling' or 'undersampling'. This helps mitigate class imbalance issues in the dataset.
 
 6. `EDA.shuffle_data(df)`: Shuffles the data in the DataFrame randomly, which can be useful for splitting data into training and testing sets.
 
