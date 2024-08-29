@@ -34,23 +34,21 @@ The classes *eda.EDA*, *eda.Graphs_eda* and *eda.Models* are tools for performin
 
 13. `Graphs_eda.categorical_plots(df)`: Creates horizontal bar charts for each categorical variable in the DataFrame.
 
-14. `Graphs_eda.histogram_plot(df, column)`: Generates an interactive histogram for a specific column in the DataFrame.
+14. `Graphs_eda.scatter_plot_matrix(df)`: Generates a scatter plot matrix (pair plot) for numeric columns in the DataFrame.
 
 15. `Graphs_eda.box_plot(df)`: Generates a combined box plot for numerical variables in a DataFrame or a single Series.
 
-16. `Graphs_eda.scatter_plot(df, column_x, column_y)`: Generates an interactive scatter plot for two variables, x and y.
+16. `Graphs_eda.hierarchical_clusters_plot(df, method='single', metric='euclidean', save_clusters=False)`: Generates a dendrogram that is useful for determining the value of k (clusters) in hierarchical clusters.
 
-17. `Graphs_eda.hierarchical_clusters_plot(df, method='single', metric='euclidean', save_clusters=False)`: Generates a dendrogram that is useful for determining the value of k (clusters) in hierarchical clusters.
+17. `Graphs_eda.correlation_heatmap_plot(df)`: Generates a correlation heatmap for the given DataFrame.
 
-18. `Graphs_eda.correlation_heatmap_plot(df)`: Generates a correlation heatmap for the given DataFrame.
+18. `Graphs_eda.numerical_plot_density(df)`: Generate density plots for all numerical features in a DataFrame.
 
-19. `Graphs_eda.numerical_plot_density(df)`: Generate density plots for all numerical features in a DataFrame.
-
-20. `Graphs_eda.pca_elbow_method_plot(df, target_variance=0.95)`: Perform PCA and use the elbow method to select the number of components. *target_variance (float)* is the target cumulative explained variance.
+19. `Graphs_eda.pca_elbow_method_plot(df, target_variance=0.95)`: Perform PCA and use the elbow method to select the number of components. *target_variance (float)* is the target cumulative explained variance.
 
 #### Perform Models Regression and Classification (Models)
 
-1. `Models.perform_model(df, target, type_model='linear')`: This method fits a specified type of regression model to the provided data. It supports linear, logistic, Poisson, and robust linear regression models. The results of the regression are printed, and the model is returned. *type_model* = 'linear' (default), 'logit', 'robust'.
+1. `Models.perform_model(df, target, type_model='linear')`: This method fits a specified type of regression model to the provided data. It supports linear, logistic, Poisson, and robust linear regression models. The results of the regression are printed, and the model is returned. *type_model* = 'linear' (default) and 'robust' for regression, or 'logit' and 'probit' for classification.
 
 ## Module [ml.py](): Data Modeling
 

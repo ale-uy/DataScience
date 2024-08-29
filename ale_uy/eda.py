@@ -2,7 +2,7 @@
 Author: ale-uy
 Date: 05/2023
 Updated: 08/2024
-Version: v2.1
+Version: v2.2
 File: eda.py
 Description: Automate data analysis and cleaning processes
 License: Apache License Version 2.0
@@ -12,17 +12,46 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
+from scipy import stats
 import seaborn as sns
 import statsmodels.api as sm
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
-from sklearn.model_selection import RandomizedSearchCV
 from sklearn.impute import KNNImputer
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder, RobustScaler, StandardScaler
 from imblearn.over_sampling import SMOTENC
-from typing import Literal, Optional, Union
+from imblearn.under_sampling import RandomUnderSampler
+from typing import Literal, Union
 
 
+# Tools:
+    
+def _check_numeric(df: pd.DataFrame):
+    """
+    Check if all columns in the DataFrame are numeric or boolean.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame to check.
+
+    Raises:
+    - ValueError: If any column in the DataFrame is not numeric or boolean.
+    """
+    if not all(df.dtypes.apply(lambda x: np.issubdtype(x, np.number) or np.issubdtype(x, np.bool_))):
+        raise ValueError("All columns in the DataFrame must be numeric or boolean. Perform EDA.convert_to_numeric()")
+
+def _check_no_nulls(df: pd.DataFrame):
+    """
+    Check if there are any null values in the DataFrame.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame to check.
+
+    Raises:
+    - ValueError: If any column in the DataFrame contains null values.
+    """
+    if df.isnull().any().any():
+        raise ValueError("The DataFrame contains null values. Perform EDA.impute_missing()")
+    
 
 class EDA:
 
@@ -103,22 +132,22 @@ class EDA:
 
     @classmethod
     def impute_missing(cls, df: pd.DataFrame, 
-                       method: Literal['mm', 'knn'] = 'mm', 
-                       num_strategy: Literal['mean', 'median'] = 'median',
-                       n_neighbors: Optional[int] = None) -> pd.DataFrame:
+                       method: Literal['mm', 'knn', 'interpolate'] = 'mm', 
+                       num_strategy: Literal['mean', 'median', 'mode'] = 'median',
+                       n_neighbors: int = 5) -> pd.DataFrame:
         """
         Imputes missing values in a DataFrame using different methods.
 
         Parameters:
             df (pd.DataFrame): The DataFrame containing missing values.
-            method (Literal['mm', 'knn']): The imputation method to use. Default is 'mm'.
-                'mm' (Median/Mode): Imputes median for numeric and mode for categorical variables.
+            method (Literal['mm', 'knn', 'interpolate']): The imputation method to use. Default is 'mm'.
+                'mm' (Mean/Median/Mode): Imputes median for numeric and mode for categorical variables.
                 'knn' (K-Nearest Neighbors): Imputes missing values using KNNImputer.
                 'interpolate': Imputes missing values using interpolation.
-            num_strategy (Literal['mean', 'median']): The strategy to use for imputing numeric columns when method='mm'.
+            num_strategy (Literal['mean', 'median', 'mode']): The strategy to use for imputing numeric columns when method='mm'.
                                                       Default is 'median'.
-            n_neighbors (Optional[int]): The number of nearest neighbors to use in the KNNImputer method.
-                                         Only applicable if the method is 'knn'. If None, performs a search.
+            n_neighbors (int): The number of nearest neighbors to use in the KNNImputer method.
+                                         Only applicable if the method is 'knn'. 5 is the default.
 
         Returns:
             pd.DataFrame: The original DataFrame with missing values imputed.
@@ -130,31 +159,28 @@ class EDA:
             imputed_df = EDA.impute_missing(df, method="knn", n_neighbors=5)
         """
         df_imputed = df.copy()
+        numeric_cols = df_imputed.select_dtypes(include=['number'])
+        non_numeric_cols = df_imputed.select_dtypes(exclude=['number'])
 
         if method == 'knn':
-            if n_neighbors is None:
-                param_grid = {'n_neighbors': list(range(3, 16))}
-                knn_imputer = KNNImputer()
-                grid_search = RandomizedSearchCV(knn_imputer, param_grid, cv=3, n_iter=6, n_jobs=-1)
-                grid_search.fit(df_imputed)
-                n_neighbors = grid_search.best_params_['n_neighbors']
-                print(f"Best value of n_neighbors found: {n_neighbors}")
-
             knn_imputer = KNNImputer(n_neighbors=n_neighbors)
-            imputed_values = knn_imputer.fit_transform(df_imputed)
-            df_imputed = pd.DataFrame(imputed_values, columns=df.columns, index=df.index)
+            df_imputed[numeric_cols.columns] = knn_imputer.fit_transform(numeric_cols)            
+            df_imputed[non_numeric_cols.columns] = non_numeric_cols.apply(lambda col: col.fillna(col.mode()[0]))
 
         elif method == 'mm':
-            for col in df_imputed.columns:
+            for col in numeric_cols:
                 if num_strategy == 'median':
-                        df_imputed[col].fillna(df_imputed[col].median(), inplace=True)
+                    df_imputed[col] = df_imputed[col].fillna(df_imputed[col].median())
                 elif num_strategy == 'mean':
-                    df_imputed[col].fillna(df_imputed[col].mean(), inplace=True)
-                else:
-                    df_imputed[col].fillna(df_imputed[col].mode().iloc[0], inplace=True)
+                    df_imputed[col] = df_imputed[col].fillna(df_imputed[col].mean())
+                elif num_strategy == 'mode':
+                    df_imputed[col] = df_imputed[col].fillna(df_imputed[col].mode().iloc[0])
+            for col in non_numeric_cols:
+                df_imputed[col] = df_imputed[col].fillna(df_imputed[col].mode().iloc[0])
 
         elif method == 'interpolate':
-            df_imputed.interpolate(method='linear', inplace=True)
+            df_imputed[numeric_cols.columns] = numeric_cols.interpolate(method='linear')
+            df_imputed[non_numeric_cols.columns] = non_numeric_cols.apply(lambda col: col.fillna(col.mode()[0]))
 
         else:
             raise ValueError("The 'method' parameter must be one of: 'mm', 'knn' or 'interpolate'.")
@@ -200,7 +226,7 @@ class EDA:
 
         Raises:
             ValueError: If an invalid method is provided or if there are no numeric columns.
-        """
+        """       
         numeric_columns = df.select_dtypes(include='number').columns
 
         if numeric_columns.empty:
@@ -237,8 +263,10 @@ class EDA:
         Returns:
         - df (DataFrame): The DataFrame with transformed columns.
         """
+        _check_no_nulls(df)
+        
         df_transformed = df.copy()
-        numeric_columns = df.select_dtypes(include=['float', 'int']).columns
+        numeric_columns = df.select_dtypes(include='number').columns
         for column in numeric_columns:
             if (df_transformed[column] >= 0).all():
                 df_transformed[column] = np.log1p(df_transformed[column])
@@ -268,6 +296,8 @@ class EDA:
             # Balance classes using oversampling
             df_balanced = EDA.balance_data(df, 'target_variable', method='oversampling')
         """
+        _check_no_nulls(df[target])
+        
         if method not in ["oversampling", "undersampling"]:
             raise ValueError("The 'method' parameter must be either 'oversampling' or 'undersampling'.")
 
@@ -288,19 +318,17 @@ class EDA:
             df_balanced = pd.concat([pd.DataFrame(X_resampled, columns=X.columns), 
                                      pd.Series(y_resampled, name=target)], axis=1)
 
-        else:  # undersampling
-            label_encoder = LabelEncoder()
-            y_encoded = label_encoder.fit_transform(y)
-            
-            minority_class = y_encoded.min()
-            majority_class = y_encoded.max()
-            
-            df_minority = df[y_encoded == minority_class]
-            df_majority = df[y_encoded == majority_class]
-            
-            df_majority_reduced = df_majority.sample(df_minority.shape[0], random_state=random_state)
-            df_balanced = pd.concat([df_minority, df_majority_reduced], axis=0)
-            df_balanced = df_balanced.sample(frac=1, random_state=random_state)
+        elif  method == 'undersampling':
+            try:
+                rus = RandomUnderSampler(random_state=random_state)
+                X_resampled, y_resampled = rus.fit_resample(X, y)
+            except Exception:
+                rus = RandomUnderSampler(random_state=random_state, replacement=True)
+                X_resampled, y_resampled = rus.fit_resample(X, y)
+                print("UnderSampler with replacement used due to insufficient samples in the majority class. It is advisable to check for duplicate data.")
+            finally:
+                df_balanced = pd.concat([pd.DataFrame(X_resampled, columns=X.columns), 
+                                    pd.Series(y_resampled, name=target)], axis=1)
 
         return df_balanced
         
@@ -315,14 +343,14 @@ class EDA:
         Returns:
             pd.DataFrame: A new DataFrame with duplicate rows removed.
         """
-        print(f'Number of duplicate observations: {df.duplicated().sum()}')
+        print(f'Number of duplicate observations: {df.duplicated().sum()} \n')
         print(f'Percentage of duplicate observations in total observations: % \
-              {100*(df.duplicated().sum())/df.shape[0]:.1f}')
+              {100*(df.duplicated().sum())/df.shape[0]:.1f} \n')
         cleaned_df = df.drop_duplicates(keep='first')
         return cleaned_df
         
     @classmethod
-    def remove_outliers(cls, df: pd.DataFrame, method='zscore', threshold=np.inf) -> pd.DataFrame:
+    def remove_outliers(cls, df: pd.DataFrame, method: Literal["zscore", "iqr"] = "zscore", threshold=np.inf) -> pd.DataFrame:
         """
        Remove outliers from a pandas DataFrame using different methods.
 
@@ -330,23 +358,33 @@ class EDA:
            df (pd.DataFrame): The data frame from which outliers will be removed.
            method (str): The method to remove outliers, can be 'zscore' (default) or 'iqr'.
            threshold (float): The threshold for considering a value as an outlier.
+           TIP: For 'zscore', a common threshold is 3. For 'iqr', a common threshold is 1.5.
 
        Returns:
            pd.DataFrame: A new DataFrame with no outliers.
        """
+        _check_no_nulls(df)
+        
+        numeric_df = df.select_dtypes(include='number')
+        
         if method == 'zscore':
-            z_scores = np.abs((df - df.mean()) / df.std())
-            cleaned_df = df[(z_scores < threshold).all(axis=1)]
+            z_scores = np.abs((numeric_df - numeric_df.mean()) / numeric_df.std())
+            mask = (z_scores < threshold).all(axis=1)
         elif method == 'iqr':
-            Q1 = df.quantile(0.25)
-            Q3 = df.quantile(0.75)
+            Q1 = numeric_df.quantile(0.25)
+            Q3 = numeric_df.quantile(0.75)
             IQR = Q3 - Q1
             lower_bound = Q1 - threshold * IQR
             upper_bound = Q3 + threshold * IQR
-            cleaned_df = df[((df >= lower_bound) & (df <= upper_bound)).all(axis=1)]
+            mask = ((numeric_df >= lower_bound) & (numeric_df <= upper_bound)).all(axis=1)
         else:
             raise ValueError("Invalid method. Please use 'zscore' or 'iqr'.")
 
+        cleaned_df = df[mask]
+        num_outliers = len(df) - len(cleaned_df)
+        percentage_outliers = (num_outliers / len(df)) * 100
+        print(f"Outliers remove: {num_outliers} \nPercentage of outliers removed: {percentage_outliers:.2f}%")
+        
         return cleaned_df
 
     @classmethod
@@ -358,10 +396,17 @@ class EDA:
         - df (pd.DataFrame or array-like): The data to perform PCA on.
         - n_components (str or int): Number of components to keep. You can use 'mle' for automatic selection
           or specify an integer for a fixed number of components.
+        TIP: Use Graphs_eda.pca_elbow_method_plot() to determine the number of components.
 
         Returns:
         - transformed_df (pd.DataFrame): The data transformed to the new feature space.
         """
+        _check_numeric(df)
+        _check_no_nulls(df)
+        
+        if df.shape[0] <= df.shape[1]:
+            raise ValueError("The number of observations must be greater than the number of features.")
+        
         pca = PCA(n_components=n_components)
         transformed_df = pca.fit_transform(df)
         return pd.DataFrame(transformed_df, columns=[f'PC{i}' for i in range(1, pca.n_components_ + 1)])
@@ -376,6 +421,10 @@ class Graphs_eda:
         Parameters:
             df (pandas DataFrame): The DataFrame containing the categorical variables to plot.
         """
+        if df.select_dtypes('O').empty:
+            print("No categorical columns found in the DataFrame.")
+            return
+        
         # Select categorical columns from the DataFrame
         categorical_columns = df.select_dtypes('O').columns
         # Calculate the number of categorical columns and rows to organize the plots
@@ -406,12 +455,13 @@ class Graphs_eda:
 
         The plots are organized in a grid, with two plots per row, and the styling is set to 'whitegrid'.
 
-        Args:
-        - df (DataFrame): The pandas DataFrame containing the data.
-
         Returns:
         None
         """
+        if df.select_dtypes(include='number').empty:
+            print("No numerical columns found in the DataFrame.")
+            return
+        
         # Get the list of numerical columns in your DataFrame
         numeric_columns = df.select_dtypes(include=['float', 'int']).columns
 
@@ -439,14 +489,19 @@ class Graphs_eda:
         plt.show()
 
     @classmethod
-    def histogram_plot(cls, df: pd.DataFrame, column: str) -> None:
+    def scatter_plot_matrix(cls, df: pd.DataFrame) -> None:
         """
-        Generates an interactive histogram for a specific column in the DataFrame.
+        Generates a scatter plot matrix (pair plot) for numeric columns in the DataFrame using seaborn.
+
         Parameters:
-            column (str): Name of the column to visualize in the histogram.
+            df (pd.DataFrame): The DataFrame containing the data.
         """
-        fig = px.histogram(df, x=column)
-        fig.show()
+        numeric_columns = df.select_dtypes(include=['number']).columns
+        if numeric_columns.empty:
+            print("No numeric columns found in the DataFrame.")
+        else:
+            sns.pairplot(df, vars=numeric_columns)
+            plt.show()
 
     @classmethod
     def box_plot(cls, df: Union[pd.Series, pd.DataFrame]) -> None:
@@ -491,17 +546,35 @@ class Graphs_eda:
         fig.show()
 
     @classmethod
-    def hierarchical_clusters_plot(cls, df: pd.DataFrame, method='single', metric='euclidean', save_clusters=False):
+    def hierarchical_clusters_plot(cls, df: pd.DataFrame, 
+                                   method: Literal["single", "complete", "average", "median", "weighted", "ward"] = "single", 
+                                   metric='euclidean', save_clusters=False):
         """
         Generates a hierarchical dendrogram from a DataFrame and saves the clusters in a series.
 
-        :param df: DataFrame with data for analysis.
-        :param method: 'single' (default), 'complete', 'average', 'weighted', 'ward', 'centroid', 'median'.
-        :param metric: Distance metric for linkage calculation.
-        :param save_clusters: True to generate a series with the cluster of each observation, \
-            will prompt for the number of clusters to use.
+        Parameters:
+        - df (DataFrame): The pandas DataFrame containing the data for analysis.
+        - method (str): The linkage algorithm to use. Options are:
+            - 'single': Single linkage
+            - 'complete': Complete linkage
+            - 'average': Average linkage
+            - 'weighted': Weighted linkage
+            - 'ward': Ward's method
+            - 'centroid': Centroid linkage
+            - 'median': Median linkage
+        - metric (str): The distance metric to use for the linkage calculation. Common metrics include:
+            - 'euclidean': Euclidean distance
+            - 'cityblock': Manhattan distance
+            - 'cosine': Cosine distance
+            - 'hamming': Hamming distance
+            - 'jaccard': Jaccard distance
+            - 'chebyshev': Chebyshev distance
+            - 'minkowski': Minkowski distance
+        - save_clusters (bool): If True, generates a series with the cluster of each observation. 
+            Will prompt for the number of clusters to use.
 
-        :return: Series with generated clusters.
+        Returns:
+        - Series: A pandas Series with the generated clusters.
         """
         # Calculate the linkage matrix
         linked = linkage(df.values, method=method, metric=metric, optimal_ordering=True)
@@ -520,7 +593,6 @@ class Graphs_eda:
             corte = linked[-num_clusters + 1, 2]  # Height of the cut in the dendrogram
             clusters = fcluster(linked, corte, criterion='distance')
 
-            # Create a series with the clusters and return it
             cluster_series = pd.Series(clusters, index=df.index, name='Clusters')
             return cluster_series
 
@@ -583,20 +655,27 @@ class Models:
         Perform a regression model using Statsmodels.
 
         Parameters:
-        df (pandas.DataFrame): The DataFrame containing the data.
-        target (str): The name of the dependent variable column.
-        type_model (str): The type of regression model to perform, 'linear' (default), 'logit', 'probit', 'robust'.
+            df (pandas.DataFrame): The DataFrame containing the data.
+            target (str): The name of the dependent variable column.
+            type_model (str): The type of regression model to perform, 'linear' (default), 'robust' for regression, and 'logit', 'probit' for category.
 
         Returns:
-        results (statsmodels.regression.linear_model.RegressionResultsWrapper): The results of the regression.
+            results (statsmodels.regression.linear_model.RegressionResultsWrapper): The results of the regression.
 
         This class method fits a specified type of regression model to the provided data using Statsmodels.
         It supports linear, logistic, Poisson, and robust linear regression models. The results of the regression
         are printed, and the results object is returned.
 
         Example:
-        results = RegressionModel.perform_model(df, 'DependentVariable', 'linear')
+        results = Models.perform_model(df, 'DependentVariable', 'linear')
         """
+        _check_no_nulls(df)
+        _check_numeric(df)
+
+        # Convert boolean columns to integers (0, 1)
+        for column in df.select_dtypes(include=['bool']).columns:
+            df[column] = df[column].astype(int)
+
         # Prepare the data
         X = df.drop(target, axis=1)
         y = df[target]
@@ -615,7 +694,7 @@ class Models:
             model = sm.Probit(y, X)
         elif type_model.lower() == 'robust':
             # Create a robust linear regression model
-            model = sm.RLM(y, sm.add_constant(X), M=sm.robust.norms.HuberT())
+            model = sm.RLM(y, X, M=sm.robust.norms.HuberT())
         else:
             raise ValueError("Valid type_model values: 'linear' (default), 'logit', 'probit', 'robust'")
 
