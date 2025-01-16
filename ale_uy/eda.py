@@ -12,9 +12,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
-from scipy import stats
 import seaborn as sns
 import statsmodels.api as sm
+from scipy.stats import norm, expon, lognorm, gamma, beta, chi2, uniform
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from sklearn.impute import KNNImputer
 from sklearn.decomposition import PCA
@@ -646,6 +646,37 @@ class Graphs_eda:
         num_components = np.where(cum_variance >= target_variance)[0][0] + 1
         print(f'Number of components to achieve the {target_variance} target variance = {num_components}')
 
+    @classmethod
+    def _plot_distribution_comparison(cls, data, distribution, params, column_name):
+        """
+        Plot the real distribution of the data and the fitted distribution for comparison.
+
+        Parameters:
+            data (pd.Series): The real data.
+            distribution (scipy.stats distribution): The fitted distribution.
+            params (tuple): The parameters of the fitted distribution.
+            column_name (str): The name of the column being plotted.
+        """
+
+        # Generate the fitted distribution
+        x = np.linspace(min(data), max(data), 100)
+        y = distribution.pdf(x, *params)
+
+        # Plot the real data distribution
+        sns.histplot(data, kde=False, stat='density', bins=30, label='Real Data', color='blue')
+
+        # Plot the fitted distribution
+        plt.plot(x, y, label=f'Fitted {distribution.name}', color='red')
+
+        # Add title and labels
+        plt.title(f'Distribution Comparison for {column_name}')
+        plt.xlabel(column_name)
+        plt.ylabel('Density')
+        plt.legend()
+
+        # Show the plot
+        plt.show()
+
 
 class Models:
     
@@ -705,4 +736,87 @@ class Models:
         print(results.summary())
 
         return results
+    
+    @classmethod
+    def _fit_distribution(cls, data, distributions:list):
+        """
+        Fit a list of distributions to the data and return the best fit.
 
+        Parameters:
+        data (pd.Series or np.ndarray): The data to fit the distributions to.
+        distributions (list): A list of scipy.stats distributions to fit to the data. 
+                              Defaults to [norm, expon, lognorm, gamma, beta, chi2].
+
+        Returns:
+        best_distribution (scipy.stats distribution): The distribution that best fits the data.
+        best_params (tuple): The parameters of the best fitting distribution.
+        best_aic (float): The AIC value of the best fitting distribution.
+        """
+        _check_no_nulls(data)
+
+        best_distribution = None
+        best_params = None
+        best_aic = np.inf
+
+        for distribution in distributions:
+            # Fit the distribution to the data
+            params = distribution.fit(data)
+            
+            # Calculate the AIC
+            log_likelihood = np.sum(distribution.logpdf(data, *params))
+            k = len(params)
+            aic = 2 * k - 2 * log_likelihood
+            
+            # Select the best fit
+            if aic < best_aic:
+                best_distribution = distribution
+                best_params = params
+                best_aic = aic
+
+        return best_distribution, best_params, best_aic
+
+    @classmethod
+    def model_numeric_variables(cls, df: pd.DataFrame, graph: bool = True, distributions: list = None) -> pd.DataFrame:
+        """
+        Model each numeric variable in the DataFrame with the best fitting distribution.
+
+        Parameters:
+        df (pd.DataFrame): The DataFrame containing the numeric variables to model.
+        graph (bool): Whether to generate and display graphs comparing the real data distribution 
+                      and the fitted distribution. Defaults to True.
+        distributions (list): A list of scipy.stats distributions to fit to the data. 
+                              Defaults to all continuous or discrete distributions in scipy.stats.
+
+
+        Returns:
+        pd.DataFrame: A DataFrame containing the best fitting distribution, parameters, and AIC 
+                      for each numeric variable.
+        """
+        _check_no_nulls(df)
+
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        if distributions is None:
+            distributions = [norm, expon, lognorm, gamma, beta, chi2, uniform]
+        else:
+            distributions = distributions
+        results = []
+
+        for col in numeric_cols:
+            data = df[col].dropna()
+            best_distribution, best_params, best_aic = Models._fit_distribution(data, distributions)
+            shape_params = best_params[:-2]
+            location = best_params[-2]
+            scale = best_params[-1]
+            results.append({
+                'Column': col,
+                'Best Distribution': best_distribution.name,
+                'Shape Parameters': shape_params,
+                'Location': location,
+                'Scale': scale,
+                'AIC': best_aic
+            })
+
+            if graph:
+                Graphs_eda._plot_distribution_comparison(data, best_distribution, best_params, col)
+
+        return pd.DataFrame(results)
